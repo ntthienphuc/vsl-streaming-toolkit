@@ -5,6 +5,10 @@ if (-not (Test-Path -LiteralPath ".venv/Scripts/python.exe")) {
     & $Python -m venv .venv
     if ($LASTEXITCODE -ne 0) { throw "Could not create virtual environment." }
 }
+& ./.venv/Scripts/python.exe -m pip install --upgrade pip
+if ($LASTEXITCODE -ne 0) { throw "Could not update pip." }
+& ./.venv/Scripts/python.exe -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+if ($LASTEXITCODE -ne 0) { throw "Could not install CPU export dependency." }
 & ./.venv/Scripts/python.exe -m pip install ".[server,export]"
 if ($LASTEXITCODE -ne 0) { throw "Could not install toolkit dependencies." }
 if (-not (Test-Path -LiteralPath $Output)) {

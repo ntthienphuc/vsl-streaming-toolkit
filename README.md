@@ -41,6 +41,8 @@ Use Python 3.9 or later. Clone the public release and create an isolated environ
 git clone https://github.com/ntthienphuc/vsl-streaming-toolkit.git
 cd vsl-streaming-toolkit
 python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
 .\.venv\Scripts\python.exe -m pip install ".[server,export]"
 .\.venv\Scripts\vsl-stream.exe demo --out my_demo
 .\.venv\Scripts\vsl-stream.exe serve --bundle my_demo/bundle --config my_demo/server.json
