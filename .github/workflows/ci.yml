@@ -1,0 +1,67 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: '3.9'
+          - os: ubuntu-latest
+            python: '3.12'
+          - os: windows-latest
+            python: '3.11'
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install and build
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[server,export,dev]"
+          python -m build
+          python -c "import glob,subprocess,sys; subprocess.check_call([sys.executable,'-m','pip','install','--force-reinstall','--no-deps',glob.glob('dist/*.whl')[0]])"
+          python -m pip check
+      - name: Test installed wheel and export fixture
+        run: |
+          python -m unittest discover -s tests -v
+          vsl-stream demo --out demo_run
+          vsl-stream inspect --bundle demo_run/bundle
+          python tools/verify_websocket_install.py --bundle demo_run/bundle --config demo_run/server.json --frames demo_run/frames.json --batch-size 5 --out demo_run/tcp_receipt.json
+          python -m pip freeze > demo_run/resolved-requirements.txt
+      - name: Verify server-only environment
+        run: |
+          python -m venv .venv-server
+          python tools/check_server_only.py --venv .venv-server --demo demo_run
+      - name: Build and check server container
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          docker build -t vsl-streaming-ci .
+          python tools/check_container.py --image vsl-streaming-ci --demo demo_run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ matrix.os }}-py${{ matrix.python }}
+          path: |
+            dist/
+            demo_run/receipt.json
+            demo_run/tcp_receipt.json
+            demo_run/server_only_receipt.json
+            demo_run/container_receipt.json
+            demo_run/resolved-requirements.txt
+          if-no-files-found: warn

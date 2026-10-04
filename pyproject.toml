@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77,<81", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vsl-streaming-toolkit"
+version = "0.1.1"
+description = "Configurable keypoint segmentation and ONNX gloss-classifier serving"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE.txt", "THIRD_PARTY_NOTICES.md"]
+authors = [{name = "Nguyễn Trần Thiên Phúc"}]
+keywords = ["sign-language", "keypoints", "streaming", "onnx", "websocket"]
+classifiers = ["Programming Language :: Python :: 3", "Topic :: Scientific/Engineering :: Artificial Intelligence", "Operating System :: OS Independent"]
+dependencies = ["numpy>=1.26,<3", "onnxruntime>=1.19,<2", "onnx>=1.16,<2"]
+
+[project.urls]
+Homepage = "https://github.com/ntthienphuc/vsl-streaming-toolkit"
+Documentation = "https://github.com/ntthienphuc/vsl-streaming-toolkit/tree/main/docs"
+Repository = "https://github.com/ntthienphuc/vsl-streaming-toolkit"
+Issues = "https://github.com/ntthienphuc/vsl-streaming-toolkit/issues"
+Changelog = "https://github.com/ntthienphuc/vsl-streaming-toolkit/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+server = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "websockets>=13,<16"]
+export = ["torch>=2.6,<3"]
+dev = ["httpx>=0.27,<1", "build>=1.2,<2"]
+
+[project.scripts]
+vsl-stream = "vsl_streaming.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.data-files]
+"share/vsl-streaming-toolkit/docs" = ["docs/*.md"]
+"share/vsl-streaming-toolkit/examples" = ["examples/*.py"]

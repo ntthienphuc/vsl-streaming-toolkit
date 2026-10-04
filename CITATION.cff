@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Please cite this version when using the toolkit in research."
+type: software
+title: "VSL Streaming Toolkit: Contract-bound keypoint classifiers and WebSocket segment events"
+authors:
+  - family-names: "Nguyễn Trần"
+    given-names: "Thiên Phúc"
+version: 0.1.1
+date-released: 2026-10-05
+license: MIT
+repository-code: "https://github.com/ntthienphuc/vsl-streaming-toolkit"
+url: "https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/tag/v0.1.1"
+keywords:
+  - sign language
+  - keypoints
+  - streaming
+  - ONNX

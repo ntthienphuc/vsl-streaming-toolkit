@@ -1,0 +1,22 @@
+name: Bug report
+description: Report a reproducible toolkit or model-contract problem.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Toolkit and Python versions
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Commands, a synthetic input, relevant profile fields and the observed error.
+    validations:
+      required: true
+  - type: textarea
+    id: expectation
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
