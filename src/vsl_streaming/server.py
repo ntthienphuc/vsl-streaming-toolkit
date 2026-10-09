@@ -22,14 +22,14 @@ def create_app(bundle_dir=None, config=None, recognizer=None):
         # Construct on the running event loop, including Python 3.9.
         application.state.inference_gate = asyncio.Semaphore(settings.inference_concurrency)
         yield
-    app = FastAPI(title="VSL Streaming Toolkit", version="0.1.1", lifespan=lifespan)
+    app = FastAPI(title="VSL Streaming Toolkit", version="0.1.2", lifespan=lifespan)
     active = set()
     app.state.active_sessions = active
     app.state.recognizer = model
 
     @app.get("/health")
     async def health():
-        return {"status": "ready", "active_sessions": len(active), "version": "0.1.1"}
+        return {"status": "ready", "active_sessions": len(active), "version": "0.1.2"}
 
     @app.get("/v1/config")
     async def configuration():

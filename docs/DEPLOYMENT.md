@@ -25,11 +25,11 @@ Generate the demo outside Docker as in REPRODUCE.md; the container needs no Torc
 With Docker Engine running, use the following Bash commands from the checkout:
 
 ```sh
-docker build -t vsl-streaming-toolkit:0.1.1 .
+docker build -t vsl-streaming-toolkit:0.1.2 .
 docker run --rm -p 127.0.0.1:8000:8000 \
   -v "$PWD/demo_run:/models:ro" \
   -v "$PWD/demo_run:/config:ro" \
-  vsl-streaming-toolkit:0.1.1
+  vsl-streaming-toolkit:0.1.2
 ```
 
 The image's defaults load `/models/bundle` and `/config/server.json`. For another

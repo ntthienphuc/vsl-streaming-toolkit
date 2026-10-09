@@ -1,7 +1,10 @@
 """Model onboarding, replay, and WebSocket deployment."""
 import argparse
+import hashlib
+from importlib.metadata import version
 import json
 from pathlib import Path
+import platform
 import sys
 from .config import ServerConfig, load_config
 from .core import StreamConfig
@@ -27,7 +30,8 @@ def replay(bundle_dir, frames_path, config, batch_size=30):
     from .protocol import MessageProcessor
     if batch_size < 1 or batch_size > config.max_batch_frames:
         raise ValueError("batch_size must be positive and at most max_batch_frames")
-    frames = read_json(frames_path)
+    frame_bytes = Path(frames_path).read_bytes()
+    frames = json.loads(frame_bytes.decode("utf-8-sig"))
     if not isinstance(frames, list) or not frames:
         raise ValueError("frames input must be a nonempty JSON array")
     recognizer = ONNXRecognizer(bundle_dir, provider=config.provider, top_k=config.top_k)
@@ -48,6 +52,12 @@ def replay(bundle_dir, frames_path, config, batch_size=30):
             "input_frames": len(frames), "predicted_segments": len(events) - rejected,
             "rejected_segments": rejected, "protocol_errors": errors,
             "model_sha256": recognizer.manifest["sha256"]["model.onnx"],
+            "input_sha256": hashlib.sha256(frame_bytes).hexdigest(),
+            "bundle_sha256": dict(recognizer.manifest["sha256"]),
+            "environment": {"python": platform.python_version(),
+                            "platform": platform.platform(),
+                            "versions": {name: version(name) for name in
+                                         ("vsl-streaming-toolkit", "numpy", "onnxruntime", "onnx")}},
             "settings": config.to_dict(), "responses": responses}
 
 

@@ -39,3 +39,6 @@ reproduction instructions, citation and tests, and
 with code structure, local setup and deployment examples. These are organizational
 comparators, not competing software benchmark results or an acceptance guarantee.
 No implementation from these repositories was copied.
+
+For a claim-oriented inventory of public checks, application examples and
+remaining evidence, see [PAPER_READINESS.md](PAPER_READINESS.md).

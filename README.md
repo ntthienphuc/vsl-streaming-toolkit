@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
 [![Release](https://img.shields.io/github/v/release/ntthienphuc/vsl-streaming-toolkit)](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases)
 
-**Version 0.1.1** — Python library, CLI and self-hosted WebSocket server.
+**Version 0.1.2** — Python library, CLI and self-hosted WebSocket server.
 
 A Python library and configurable WebSocket server for connecting a compatible
 keypoint sequence classifier to an application:
@@ -192,7 +192,8 @@ For a self-contained verification procedure, see [REPRODUCE.md](REPRODUCE.md).
 The included `Start-Demo.ps1` prepares and serves the synthetic example on Windows.
 
 Replay uses the same core and runtime as the WebSocket adapter. The receipt
-records settings, model hash, events, explicit failures and processing times.
+records settings, the exact frame-file hash, graph/profile/ordered-label hashes,
+runtime versions, events, explicit failures and processing times.
 Frame replay is useful with experimentally recorded keypoints, but replay
 alone is not a live-camera experiment. Tests cover ordering, batch atomicity,
 multiple segments, fragmentation, gaps, dropout, flush/reset, bounded state,

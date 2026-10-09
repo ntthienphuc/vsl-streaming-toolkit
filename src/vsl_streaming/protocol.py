@@ -36,8 +36,11 @@ def error_response(error, request_id=None):
             request_id.encode("utf-8")
         except UnicodeError:
             request_id = None
+    # Parser exceptions may include a duplicate key containing an unpaired
+    # surrogate. Keep the error itself serializable and bounded, too.
+    detail = str(error.message).encode("utf-8", errors="replace").decode("utf-8")[:2000]
     return {"type": "error", "request_id": request_id,
-            "error": {"code": error.code, "message": error.message}}
+            "error": {"code": error.code, "message": detail}}
 
 
 class MessageProcessor:

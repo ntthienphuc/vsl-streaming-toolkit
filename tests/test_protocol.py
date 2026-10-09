@@ -5,7 +5,7 @@ import unittest
 
 from vsl_streaming.config import ServerConfig
 from vsl_streaming.core import ProtocolError, StreamConfig
-from vsl_streaming.protocol import MessageProcessor, decode_message
+from vsl_streaming.protocol import MessageProcessor, decode_message, error_response
 
 
 class FakeRecognizer:
@@ -154,6 +154,11 @@ class ProtocolTests(unittest.TestCase):
 
 
 class ConfigurationAndJSONTests(unittest.TestCase):
+    def test_error_details_are_bounded_and_utf8(self):
+        result = error_response(ProtocolError("invalid_json", "\ud800" + "x" * 3000))
+        self.assertEqual(len(result["error"]["message"]), 2000)
+        json.dumps(result, ensure_ascii=False).encode("utf-8")
+
     def test_strict_json(self):
         for text in ('{"x":NaN}', '{"x":Infinity}', '{"x":1,"x":2}', '{'):
             with self.assertRaises(ProtocolError) as caught:

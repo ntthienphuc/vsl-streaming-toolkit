@@ -148,6 +148,20 @@ class WebSocketServerTests(unittest.TestCase):
                 self.assertEqual(result["state"]["received_frames"], 3)
                 self.assertEqual(model.calls, [[0, 1, 2]])
 
+    def test_duplicate_surrogate_json_key_returns_error_and_recovers(self):
+        app = create_app(config=config(), recognizer=FakeRecognizer())
+        with TestClient(app) as client:
+            with client.websocket_connect("/v1/stream") as ws:
+                ws.receive_json()
+                ws.send_text('{"\\ud800":1,"\\ud800":2}')
+                response = ws.receive_json()
+                self.assertEqual(response["error"]["code"], "invalid_json")
+                response["error"]["message"].encode("utf-8")
+                ws.send_json(message())
+                response = ws.receive_json()
+                self.assertEqual(response["type"], "result")
+                self.assertEqual(response["state"]["received_frames"], 3)
+
     def test_duplicate_conflict_is_recoverable_and_atomic(self):
         model = FakeRecognizer()
         app = create_app(config=config(), recognizer=model)
