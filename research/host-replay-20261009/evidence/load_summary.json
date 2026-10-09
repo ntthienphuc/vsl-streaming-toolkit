@@ -1,0 +1,80 @@
+[
+  {
+    "backend": "spoter",
+    "concurrent_sessions": 1,
+    "waves": 6,
+    "connections": 6,
+    "requests": 200,
+    "event_bearing_requests": 60,
+    "request_rtt_p50_ms": 27.054449979914352,
+    "request_rtt_p95_ms": 48.40353002073242,
+    "event_bearing_rtt_p95_ms": 56.203064968576655,
+    "wave_throughput_median_frames_s": 821.5127823315213,
+    "process_tree_sampled_peak_rss_mib": 135.0546875
+  },
+  {
+    "backend": "spoter",
+    "concurrent_sessions": 4,
+    "waves": 6,
+    "connections": 24,
+    "requests": 800,
+    "event_bearing_requests": 240,
+    "request_rtt_p50_ms": 92.22164997481741,
+    "request_rtt_p95_ms": 141.7538050096482,
+    "event_bearing_rtt_p95_ms": 159.128054996836,
+    "wave_throughput_median_frames_s": 1200.556563889097,
+    "process_tree_sampled_peak_rss_mib": 137.00390625
+  },
+  {
+    "backend": "spoter",
+    "concurrent_sessions": 8,
+    "waves": 6,
+    "connections": 48,
+    "requests": 1600,
+    "event_bearing_requests": 480,
+    "request_rtt_p50_ms": 192.6394000183791,
+    "request_rtt_p95_ms": 283.6490550107555,
+    "event_bearing_rtt_p95_ms": 305.00561496592127,
+    "wave_throughput_median_frames_s": 1186.2859186064659,
+    "process_tree_sampled_peak_rss_mib": 139.65234375
+  },
+  {
+    "backend": "slgcn",
+    "concurrent_sessions": 1,
+    "waves": 6,
+    "connections": 6,
+    "requests": 200,
+    "event_bearing_requests": 60,
+    "request_rtt_p50_ms": 29.016899992711842,
+    "request_rtt_p95_ms": 217.83598000474737,
+    "event_bearing_rtt_p95_ms": 228.4779549925588,
+    "wave_throughput_median_frames_s": 347.63197246547657,
+    "process_tree_sampled_peak_rss_mib": 179.68359375
+  },
+  {
+    "backend": "slgcn",
+    "concurrent_sessions": 4,
+    "waves": 6,
+    "connections": 24,
+    "requests": 800,
+    "event_bearing_requests": 240,
+    "request_rtt_p50_ms": 206.25919997110032,
+    "request_rtt_p95_ms": 801.2922800378874,
+    "event_bearing_rtt_p95_ms": 832.5415499799418,
+    "wave_throughput_median_frames_s": 395.8935527519121,
+    "process_tree_sampled_peak_rss_mib": 181.7109375
+  },
+  {
+    "backend": "slgcn",
+    "concurrent_sessions": 8,
+    "waves": 6,
+    "connections": 48,
+    "requests": 1600,
+    "event_bearing_requests": 480,
+    "request_rtt_p50_ms": 359.59310000180267,
+    "request_rtt_p95_ms": 1563.2421249523757,
+    "event_bearing_rtt_p95_ms": 1650.7034049893264,
+    "wave_throughput_median_frames_s": 396.0978643673194,
+    "process_tree_sampled_peak_rss_mib": 183.48828125
+  }
+]

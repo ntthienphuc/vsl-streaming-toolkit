@@ -231,3 +231,7 @@ continuous-language segmentation, Jetson performance, or acceptance by a journal
 Use [CITATION.cff](CITATION.cff) to cite this software version. Bug reports and
 model-integration questions belong in [GitHub Issues](https://github.com/ntthienphuc/vsl-streaming-toolkit/issues).
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
+
+## Host replay study (9 October 2026)
+
+The [study capsule](research/host-replay-20261009/README.md) freezes runtime v0.1.2 and supplies numeric host measurements, reproducible analysis, owner-model replay tools and a prospective phone test page/protocol. Two owner-provided models agree with their direct runtimes on 30 segments each. Across 156 measured loopback connections, 5,200 requests preserve offline events with cleanup to zero active sessions. These results are host replay, not recognition accuracy or live-phone validation. Models and human traces remain private; the public synthetic path is self-contained.

@@ -1,0 +1,52 @@
+{
+  "scope": "desktop Chromium at 320px; no physical phone or Wi-Fi test",
+  "checks": [
+    {
+      "case": "permission_required",
+      "pass": true
+    },
+    {
+      "case": "ready_handshake",
+      "pass": true
+    },
+    {
+      "case": "synthetic_replay",
+      "expected": {
+        "frames": 8,
+        "requests": 3,
+        "predictions": 3,
+        "rejected": 0
+      },
+      "observed": {
+        "frames": 8,
+        "requests": 3,
+        "predictions": 3,
+        "rejected": 0
+      },
+      "pass": true
+    },
+    {
+      "case": "reset_clears_state",
+      "pass": true
+    },
+    {
+      "case": "reconnect_new_id",
+      "pass": true
+    },
+    {
+      "case": "320px_no_horizontal_overflow",
+      "pass": true
+    },
+    {
+      "case": "receipt_download",
+      "pass": true
+    },
+    {
+      "case": "no_javascript_exceptions",
+      "pass": true
+    }
+  ],
+  "checks_total": 8,
+  "checks_passed": 8,
+  "javascript_errors": []
+}

@@ -1,0 +1,409 @@
+{
+  "status": "passed",
+  "scope": "synthetic arithmetic fixture, installed package, real loopback TCP/WebSocket; no phone or natural recognition evidence",
+  "utc": "2026-10-09T04:38:58Z",
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.26300-SP0",
+  "package_path": "installed vsl_streaming package (private absolute path removed)",
+  "versions": {
+    "vsl-streaming-toolkit": "0.1.2",
+    "fastapi": "0.142.2",
+    "uvicorn": "0.54.0",
+    "websockets": "15.0.1"
+  },
+  "settings": {
+    "stream": {
+      "mode": "fixed_window",
+      "window_frames": 3,
+      "angle_threshold": 140.0,
+      "visibility_threshold": 0.5,
+      "min_up_frames": 1,
+      "min_down_frames": 4,
+      "min_down_ms": 300.0,
+      "min_segment_frames": 2,
+      "max_gap_ms": 100,
+      "max_buffer_frames": 6
+    },
+    "provider": "CPUExecutionProvider",
+    "top_k": 3,
+    "max_sessions": 2,
+    "max_batch_frames": 8,
+    "max_message_bytes": 4096,
+    "request_cache_size": 8,
+    "inference_concurrency": 1
+  },
+  "uvicorn_ws_max_size": 65536,
+  "uvicorn_ws_max_queue": 8,
+  "checks_total": 30,
+  "checks_passed": 30,
+  "error": null,
+  "synthetic_model_counts": {
+    "started": 31,
+    "completed": 31,
+    "active": 0,
+    "peak_concurrency": 1
+  },
+  "server_thread_stopped": true,
+  "script_sha256": "85ad1f0316d9dcefadddfca51c062f3fe2bf98acf882503f7115ab6aee550974",
+  "checks": [
+    {
+      "case": "invalid_configuration_rejection",
+      "expected": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "observed": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "pass": true
+    },
+    {
+      "case": "advertised_settings",
+      "expected": {
+        "stream": {
+          "mode": "fixed_window",
+          "window_frames": 3,
+          "angle_threshold": 140.0,
+          "visibility_threshold": 0.5,
+          "min_up_frames": 1,
+          "min_down_frames": 4,
+          "min_down_ms": 300.0,
+          "min_segment_frames": 2,
+          "max_gap_ms": 100,
+          "max_buffer_frames": 6
+        },
+        "provider": "CPUExecutionProvider",
+        "top_k": 3,
+        "max_sessions": 2,
+        "max_batch_frames": 8,
+        "max_message_bytes": 4096,
+        "request_cache_size": 8,
+        "inference_concurrency": 1
+      },
+      "observed": {
+        "stream": {
+          "mode": "fixed_window",
+          "window_frames": 3,
+          "angle_threshold": 140.0,
+          "visibility_threshold": 0.5,
+          "min_up_frames": 1,
+          "min_down_frames": 4,
+          "min_down_ms": 300.0,
+          "min_segment_frames": 2,
+          "max_gap_ms": 100,
+          "max_buffer_frames": 6
+        },
+        "provider": "CPUExecutionProvider",
+        "top_k": 3,
+        "max_sessions": 2,
+        "max_batch_frames": 8,
+        "max_message_bytes": 4096,
+        "request_cache_size": 8,
+        "inference_concurrency": 1
+      },
+      "pass": true
+    },
+    {
+      "case": "malformed_00",
+      "expected": "text_required",
+      "observed": "text_required",
+      "pass": true
+    },
+    {
+      "case": "malformed_01",
+      "expected": "invalid_json",
+      "observed": "invalid_json",
+      "pass": true
+    },
+    {
+      "case": "malformed_02",
+      "expected": "invalid_json",
+      "observed": "invalid_json",
+      "pass": true
+    },
+    {
+      "case": "malformed_03",
+      "expected": "invalid_json",
+      "observed": "invalid_json",
+      "pass": true
+    },
+    {
+      "case": "malformed_04",
+      "expected": "invalid_json",
+      "observed": "invalid_json",
+      "pass": true
+    },
+    {
+      "case": "malformed_05",
+      "expected": "invalid_json",
+      "observed": "invalid_json",
+      "pass": true
+    },
+    {
+      "case": "malformed_06",
+      "expected": "invalid_message",
+      "observed": "invalid_message",
+      "pass": true
+    },
+    {
+      "case": "malformed_07",
+      "expected": "invalid_request_id",
+      "observed": "invalid_request_id",
+      "pass": true
+    },
+    {
+      "case": "malformed_08",
+      "expected": "unknown_field",
+      "observed": "unknown_field",
+      "pass": true
+    },
+    {
+      "case": "malformed_09",
+      "expected": "invalid_type",
+      "observed": "invalid_type",
+      "pass": true
+    },
+    {
+      "case": "malformed_10",
+      "expected": "message_too_large",
+      "observed": "message_too_large",
+      "pass": true
+    },
+    {
+      "case": "malformed_11",
+      "expected": "batch_too_large",
+      "observed": "batch_too_large",
+      "pass": true
+    },
+    {
+      "case": "malformed_no_frames_applied",
+      "expected": 0,
+      "observed": 0,
+      "pass": true
+    },
+    {
+      "case": "malformed_rejection_count",
+      "expected": 12,
+      "observed": 12,
+      "pass": true
+    },
+    {
+      "case": "late_invalid_batch",
+      "expected": {
+        "code": "invalid_points",
+        "received": 0,
+        "inferences": 0
+      },
+      "observed": {
+        "code": "invalid_points",
+        "received": 0,
+        "inferences": 0
+      },
+      "pass": true
+    },
+    {
+      "case": "exact_retry",
+      "expected": {
+        "replayed": true,
+        "equal_events": true,
+        "inferences": 1
+      },
+      "observed": {
+        "replayed": true,
+        "equal_events": true,
+        "inferences": 1
+      },
+      "pass": true
+    },
+    {
+      "case": "conflict_then_recovery",
+      "expected": {
+        "code": "request_id_conflict",
+        "received": 6,
+        "seqs": [
+          3,
+          4,
+          5
+        ]
+      },
+      "observed": {
+        "code": "request_id_conflict",
+        "received": 6,
+        "seqs": [
+          3,
+          4,
+          5
+        ]
+      },
+      "pass": true
+    },
+    {
+      "case": "ordering_rejected",
+      "expected": "out_of_order_seq",
+      "observed": "out_of_order_seq",
+      "pass": true
+    },
+    {
+      "case": "cleanup_after_correctness",
+      "expected": 0,
+      "observed": 0,
+      "pass": true
+    },
+    {
+      "case": "reconnect_fresh_session",
+      "expected": {
+        "new_id": true,
+        "received": 2,
+        "replayed": false
+      },
+      "observed": {
+        "new_id": true,
+        "received": 2,
+        "replayed": false
+      },
+      "pass": true
+    },
+    {
+      "case": "gap_then_flush",
+      "expected": {
+        "reasons": [
+          "gap",
+          "flush"
+        ],
+        "counts": [
+          2,
+          2
+        ],
+        "gaps": 1,
+        "buffered": 0
+      },
+      "observed": {
+        "reasons": [
+          "gap",
+          "flush"
+        ],
+        "counts": [
+          2,
+          2
+        ],
+        "gaps": 1,
+        "buffered": 0
+      },
+      "pass": true
+    },
+    {
+      "case": "capacity_2_admitted_5_excess",
+      "expected": {
+        "active": 2,
+        "close_codes": [
+          1013,
+          1013,
+          1013,
+          1013,
+          1013
+        ]
+      },
+      "observed": {
+        "active": 2,
+        "close_codes": [
+          1013,
+          1013,
+          1013,
+          1013,
+          1013
+        ]
+      },
+      "pass": true
+    },
+    {
+      "case": "global_inference_gate",
+      "expected": {
+        "responses": 2,
+        "predictions": 2,
+        "peak": 1
+      },
+      "observed": {
+        "responses": 2,
+        "predictions": 2,
+        "peak": 1
+      },
+      "pass": true
+    },
+    {
+      "case": "capacity_cleanup",
+      "expected": 0,
+      "observed": 0,
+      "pass": true
+    },
+    {
+      "case": "capacity_slot_reusable",
+      "expected": 1,
+      "observed": 1,
+      "pass": true
+    },
+    {
+      "case": "paused_reader_24_request_burst",
+      "expected": {
+        "sent": 24,
+        "responses": 24,
+        "predictions": 24,
+        "errors": 0,
+        "final_received_frames": 72,
+        "inferences": 24,
+        "ordered_ids": true
+      },
+      "observed": {
+        "sent": 24,
+        "responses": 24,
+        "predictions": 24,
+        "errors": 0,
+        "final_received_frames": 72,
+        "inferences": 24,
+        "ordered_ids": true
+      },
+      "pass": true
+    },
+    {
+      "case": "paused_reader_cleanup",
+      "expected": 0,
+      "observed": 0,
+      "pass": true
+    },
+    {
+      "case": "disconnect_does_not_cancel_started_inference",
+      "expected": {
+        "active_at_disconnect": 1,
+        "started": 1,
+        "completed": 1,
+        "sessions_after": 0
+      },
+      "observed": {
+        "active_at_disconnect": 1,
+        "started": 1,
+        "completed": 1,
+        "sessions_after": 0
+      },
+      "pass": true
+    }
+  ],
+  "limitations": [
+    "Finite paused-reader burst does not prove memory bounds for transport queues or sustained overload.",
+    "Client receive timeouts do not cancel server work; started inference completed after disconnect in this test.",
+    "No trained-model latency, recognition accuracy, Wi-Fi, smartphone capture, or production robustness claim."
+  ]
+}

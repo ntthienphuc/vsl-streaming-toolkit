@@ -31,3 +31,7 @@ owner checkout and does not copy its implementation or grant its redistribution.
 [Related work](docs/RELATED_WORK.md) cites inspected upstream tools for comparison.
 Their implementations are not vendored. The synthetic fixture generator and
 protocol/segmentation implementation are part of this toolkit's MIT source.
+
+## Optional research tools
+
+The separate research/host-replay-20261009 capsule uses psutil 7.2.2 (BSD-3-Clause) as a resource observer and optional Playwright 1.62.0 (Apache-2.0) for desktop-browser checks. Distribution declarations are recorded in its RESEARCH_DEPENDENCY_LICENSES.json. They are installed separately; preserve their native/transitive notices when redistributing an environment. The capsule contains authored harness code and numeric observations, without model weights, human landmarks or external recognizer implementations.

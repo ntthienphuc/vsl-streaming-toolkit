@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VSL phone transport readiness</title>
+<style>body{font:16px system-ui;max-width:850px;margin:24px auto;padding:0 16px;color:#143446;background:#f2f7fa}h1{font-size:1.65rem}input,button{font:inherit;box-sizing:border-box;max-width:100%;padding:9px;margin:5px 0}input[type=url]{width:100%}button{background:#126377;color:white;border:0;border-radius:5px;margin-right:5px}button:disabled{opacity:.5}label{display:block;margin:12px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:15px}small{display:block;line-height:1.5}.panel{background:white;padding:14px;border-radius:8px;margin:14px 0}</style>
+<h1>VSL phone transport readiness</h1>
+<p>Replay known keypoint frames from this browser. The built-in fixture is synthetic. This page does not capture camera video or extract landmarks.</p>
+<div class="panel"><label>WebSocket endpoint <input id="url" type="url"></label>
+<label><input id="permission" type="checkbox"> I may send the selected data to this endpoint. I have checked the model's coordinate and preprocessing contract.</label>
+<button id="connect">Connect</button><button id="disconnect">Disconnect</button>
+<p id="status" role="status">Disconnected</p></div>
+<div class="panel"><label>Optional JSON array of compatible keypoint frames <input id="file" type="file" accept=".json,application/json"></label>
+<small>Without a file, replay generates 8 synthetic 2×2 point frames for the readiness fixture server only.</small>
+<label>Frames per batch <input id="batch" type="number" min="1" max="120" value="3"></label>
+<button id="replay">Replay + final flush</button><button id="flush">Flush</button><button id="reset">Reset stream</button><button id="export">Download receipt</button></div>
+<p>RTT uses this browser's monotonic clock from send to response. Server processing time is reported separately. Neither value isolates Wi-Fi time. Closing the client or reaching its timeout does not imply cancellation of server inference.</p>
+<pre id="output">No test performed.</pre>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), log=[], sockets=new Set();
+let ws=null,ready=null,pending=null,counter=0,busy=false;
+$('url').value=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/v1/stream';
+function show(value){$('output').textContent=JSON.stringify(value,null,2);}
+function setBusy(value){busy=value;for(const id of ['connect','replay','flush','reset','file','batch'])$(id).disabled=value;}
+function close(){if(ws){ws.close(1000,'User disconnect');ws=null;}ready=null;$('status').textContent='Disconnected';}
+function connect(){return new Promise((resolve,reject)=>{
+ if(!$('permission').checked){reject(Error('Confirm permission and input contract first.'));return;}
+ close();const current=new WebSocket($('url').value);ws=current;sockets.add(current);let settled=false;
+ const deadline=setTimeout(()=>{if(!settled){settled=true;current.close();reject(Error('Handshake timeout; no server cancellation implied.'));}},10000);
+ current.onmessage=event=>{let r;try{r=JSON.parse(event.data);}catch(e){reject(e);return;}
+  if(r.type==='ready'){clearTimeout(deadline);settled=true;ready=r;log.push({kind:'ready',at:new Date().toISOString(),response:r});$('status').textContent='Connected: '+r.session_id;resolve(r);return;}
+  if(pending&&r.request_id===pending.id){const p=pending;pending=null;clearTimeout(p.timer);const row={kind:'response',request_id:p.id,request_type:p.kind,frame_count:p.frameCount,rtt_ms:performance.now()-p.start,server_processing_ms:r.processing_ms??null,response:r};log.push(row);p.resolve(row);}
+  else{log.push({kind:'unsolicited',response:r});show(r);}
+ };
+ current.onerror=()=>{clearTimeout(deadline);if(!settled){settled=true;reject(Error('WebSocket connection failed. Check host address and reachability.'));}};
+ current.onclose=event=>{clearTimeout(deadline);sockets.delete(current);log.push({kind:'close',code:event.code,reason:event.reason});if(!settled){settled=true;reject(Error('Closed during handshake: '+event.code));}if(pending&&pending.socket===current){const p=pending;pending=null;clearTimeout(p.timer);p.reject(Error('Disconnected before acknowledgment; completion is unknown.'));}if(ws===current){ws=null;ready=null;$('status').textContent='Disconnected: '+event.code;}};
+ });}
+async function request(body){if(!ws||ws.readyState!==WebSocket.OPEN)await connect();if(pending)throw Error('A request is already pending.');const current=ws;const id='browser-'+(++counter);return new Promise((resolve,reject)=>{
+ const timer=setTimeout(()=>{if(pending&&pending.id===id){pending=null;current.close();reject(Error('Response timeout; completion is unknown and server inference may continue.'));}},15000);
+ pending={id,kind:body.type,frameCount:body.frames?.length??0,start:performance.now(),resolve,reject,timer,socket:current};current.send(JSON.stringify({...body,request_id:id}));
+ });}
+async function action(fn){if(busy)return;setBusy(true);try{await fn();}catch(e){show({error:e.message});log.push({kind:'client_error',message:e.message});}finally{setBusy(false);}}
+$('connect').onclick=()=>action(async()=>show(await connect()));
+$('disconnect').onclick=close;
+$('reset').onclick=()=>action(async()=>show(await request({type:'reset'})));
+$('flush').onclick=()=>action(async()=>show(await request({type:'flush'})));
+$('replay').onclick=()=>action(async()=>{
+ if(!$('permission').checked)throw Error('Confirm permission first.');
+ const file=$('file').files[0];let frames;
+ if(file){frames=JSON.parse(await file.text());if(!Array.isArray(frames)||!frames.length)throw Error('Expected a nonempty JSON frame array.');}
+ else frames=Array.from({length:8},(_,seq)=>({seq,timestamp_ms:20*seq,points:[[seq,0],[1,seq]]}));
+ const reset=await request({type:'reset'});if(reset.response.type==='error')throw Error(reset.response.error.message);
+ let n=Number($('batch').value);if(!Number.isInteger(n)||n<1)throw Error('Batch size must be a positive integer.');n=Math.min(n,ready.settings.max_batch_frames);
+ let sent=0,predictions=0,rejected=0,requests=0;const rtts=[];
+ for(let i=0;i<frames.length;i+=n){const row=await request({type:'frames',frames:frames.slice(i,i+n),flush:i+n>=frames.length});requests++;rtts.push(row.rtt_ms);if(row.response.type==='error')throw Error(row.response.error.code+': '+row.response.error.message);sent+=Math.min(n,frames.length-i);for(const event of row.response.events){if(event.status==='predicted')predictions++;else rejected++;}}
+ const summary={kind:'replay_summary',source:file?'user_selected_file':'synthetic_2x2_fixture',frames:sent,requests,predictions,rejected,batch_size:n,rtt_ms:rtts,scope:'browser transport replay; no camera, recognition accuracy, or isolated Wi-Fi measurement'};log.push(summary);show(summary);$('status').textContent='Replay complete: '+sent+' frames, '+predictions+' predictions, '+rejected+' rejected events';
+});
+$('export').onclick=()=>{const receipt={schema:'vsl-phone-readiness-1',created:new Date().toISOString(),endpoint:$('url').value,user_agent:navigator.userAgent,rows:log,limitations:['No camera capture or landmark extraction.','RTT includes browser, network, server queue and processing.','No raw input frames are included; responses can contain model outputs. Review before sharing.']};const blob=new Blob([JSON.stringify(receipt,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='vsl-browser-readiness.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+window.addEventListener('beforeunload',()=>{for(const socket of sockets)socket.close();});
+</script></html>

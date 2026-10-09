@@ -1,0 +1,22 @@
+{
+  "release_version": "0.1.2",
+  "runtime_commit": "f2410017a5273ecf3158f7971f31c4b484d2e9dd",
+  "source_license": "MIT",
+  "source_owner": "Nguyễn Trần Thiên Phúc",
+  "included": [
+    "authored study harness",
+    "synthetic fixture/browser",
+    "numeric measurements",
+    "model/input hashes"
+  ],
+  "excluded": [
+    "trained weights",
+    "human keypoints/videos",
+    "class-label strings",
+    "owner preprocessing algorithms",
+    "private absolute paths"
+  ],
+  "real_case_public_access": "not established",
+  "phone_phase": "prospective; desktop browser test only",
+  "original_receipt_sha256": "7328a32150cdc48c0a7823a1eb4b5f61fabc17d212c8c684feba009745904f76"
+}
