@@ -104,8 +104,11 @@ of the archived numeric measurements.
 
 Two warmup and five timed passes over 30 segments yield 150 observations per
 layer and backend. Median/p95 values use NumPy percentiles. Component percentiles
-are not additive. Direct-versus-toolkit differences include session settings
-and postprocessing; they do not isolate wrapper overhead.
+are not additive. The completed-run receipt records equal ORT_SEQUENTIAL,
+intra-op 1 and inter-op 1 settings for owner and toolkit sessions. Paired
+differences compare complete calls including postprocessing; they do not isolate
+wrapper overhead. This wording was clarified on 10 October; frozen observations,
+the historical study tag and its archive remain unchanged.
 
 Request RTT starts after client payload construction and includes socket send,
 server waiting/processing/encoding, receive and client response parsing. This

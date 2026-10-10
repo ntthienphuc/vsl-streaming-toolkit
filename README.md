@@ -17,6 +17,12 @@ Developers supply a trained classifier, its exact preprocessing contract and
 ordered labels. The existing Android app can be adapted to this protocol;
 a browser frame-file replay page and Python WebSocket client are included.
 
+The public distribution contains no native Android/Flutter application.
+Camera capture and landmark extraction remain external. See
+[evaluation scope and client integration](docs/EVALUATION_SCOPE.md) and the
+[next measurement protocol](docs/REMEASUREMENT_PLAN.md) for measured evidence,
+pending device work and pass/fail criteria.
+
 Copyright © 2026 Nguyễn Trần Thiên Phúc. Toolkit source is released under
 [MIT](LICENSE.txt). Dependencies retain their own licenses; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No trained sign-language model,
