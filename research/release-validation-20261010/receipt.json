@@ -14,12 +14,12 @@
   "pip_check": "passed",
   "artifacts": {
     "vsl_streaming_toolkit-0.2.0-py3-none-any.whl": {
-      "bytes": 106870,
-      "sha256": "c71db0cefca5aa54054855ee6fc3da643f02f410948e6b3370eec3e218aa30ce"
+      "bytes": 106875,
+      "sha256": "2b30a596ad4a8234c1df746a898b6416e5ccf2ba606955f1cd3c0ef497eb3562"
     },
     "vsl_streaming_toolkit-0.2.0.tar.gz": {
-      "bytes": 185674,
-      "sha256": "f8a3c5073f91019414ae2909356774aa2355343bac6f8ffef89bb5dd328b09e0"
+      "bytes": 185590,
+      "sha256": "92873711b130882c27f205ed3491b093e3f27cb340fbf859ebb24c176ef051ba"
     }
   },
   "android": {
@@ -118,5 +118,6 @@
     "missing_pose_frames": 6,
     "delegate": "CPU",
     "meaning": "decoder and actual MediaPipe execution only"
-  }
+  },
+  "validated_code_commit": "2c45c403b704146d8c9a8d2753e0cbb0e7692841"
 }
