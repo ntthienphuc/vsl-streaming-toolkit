@@ -1,10 +1,12 @@
 # VSL Streaming Toolkit
 
 [![CI](https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
+[![License](https://img.shields.io/badge/License-MIT%20%2B%20Apache--2.0-blue.svg)](THIRD_PARTY_NOTICES.md)
 [![Release](https://img.shields.io/github/v/release/ntthienphuc/vsl-streaming-toolkit)](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases)
 
-**Version 0.1.2** — Python library, CLI and self-hosted WebSocket server.
+**Version 0.2.0** — Reproducible deployment of keypoint-based, isolated-sign classifiers.
+
+[Quick start](#install-and-run-the-complete-demonstration) · [Model contracts](docs/MODEL_CONTRACT.md) · [Android client](docs/ANDROID_CLIENT.md) · [Reproduction](REPRODUCE.md) · [Evidence and limits](docs/EVALUATION_SCOPE.md)
 
 A Python library and configurable WebSocket server for connecting a compatible
 keypoint sequence classifier to an application:
@@ -14,17 +16,29 @@ keypoint sequence classifier to an application:
 The toolkit owns buffering, motion/window segmentation, per-connection state,
 frame ordering, retry handling, model-contract checks and deployment commands.
 Developers supply a trained classifier, its exact preprocessing contract and
-ordered labels. The existing Android app can be adapted to this protocol;
-a browser frame-file replay page and Python WebSocket client are included.
+ordered labels. Version 0.2.0 adds two native model-input profiles, an optional
+offline-video extractor, a standalone Android reference client with reusable
+transport, and annotation-based event evaluation. The browser remains a
+keypoint-file replay client. The original Flutter application is a separate
+project and is not required to install this toolkit.
 
-The public distribution contains no native Android/Flutter application.
-Camera capture and landmark extraction remain external. See
-[evaluation scope and client integration](docs/EVALUATION_SCOPE.md) and the
-[next measurement protocol](docs/REMEASUREMENT_PLAN.md) for measured evidence,
-pending device work and pass/fail criteria.
+| Component | Responsibility | Entry point |
+| --- | --- | --- |
+| Library and server | Ordered streams, bounded segmentation, inference and session lifecycle | `serve` |
+| Model onboarding | Labels, tensor contract, artifact hashes and export checks | `init`, `export`, `register`, `inspect` |
+| Video adapter | CPU pose/hand extraction, clock policy and trace provenance | `extract-video` |
+| Android reference client | Camera capture or file replay with reusable WebSocket transport | [Android guide](docs/ANDROID_CLIENT.md) |
+| Evaluation | Boundary matching, missed/extra events and gloss edit counts | `evaluate` |
+
+The software returns segment-level **gloss predictions**. A motion or capacity
+boundary is not proof of a linguistic word boundary. Recognition accuracy,
+natural-sign segmentation quality and physical-phone performance require
+separate evidence; see [evaluation scope](docs/EVALUATION_SCOPE.md).
 
 Copyright © 2026 Nguyễn Trần Thiên Phúc. Toolkit source is released under
-[MIT](LICENSE.txt). Dependencies retain their own licenses; see
+[MIT](LICENSE.txt), except the Apache-2.0 native preprocessing module with
+retained SPOTER lineage. The combined source expression is **MIT AND Apache-2.0**.
+Dependencies retain their own licenses; see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No trained sign-language model,
 recorded keypoints, or training dataset is distributed. The runnable demo uses
 a generated synthetic model and establishes execution, not recognition accuracy.
@@ -79,7 +93,8 @@ it is not a platform-independent transitive lockfile.
 
 ## Bring a trained model
 
-1. Create editable files with `vsl-stream init --out my_model_config`.
+1. Create editable files with `vsl-stream init --out my_model_config`; use
+   `--profile spoter54-legacy-v1` or `--profile slgcn27-bone-v1` for those exact contracts.
 2. Replace `labels.json` with the **training class order**. Edit `profile.json`
    to describe the training input names, layout, dimensions and preprocessing.
 3. Provide an importable factory that returns the actual PyTorch architecture.
@@ -106,9 +121,11 @@ A bare checkpoint cannot reveal its architecture, landmark order or
 normalization. Those must be supplied. V1 accepts one float32 keypoint tensor,
 with `BTVC` or `BCTVM` layout, and a float32 raw-logit output `[1, classes]`.
 CTC recognizers, video CNN inputs, multi-input models and text translation need
-additional explicit adapters. The new `mediapipe49-shoulder-v1` profile must
-match training; it is not compatible by assumption with legacy SPOTER/SL-GCN
-weights. Use `identity-v1` when the client supplies already prepared per-frame
+additional explicit adapters. The `mediapipe49-shoulder-v1` profile must
+match training. Native `spoter54-legacy-v1` and `slgcn27-bone-v1` profiles preserve
+two audited deployment contracts without an external application checkout; see
+[their ordering, temporal rules and historical quirks](docs/PREPROCESSING_PROFILES.md).
+An architecture name alone does not establish checkpoint compatibility. Use `identity-v1` when the client supplies already prepared per-frame
 model points. A trusted `external-python-v1` function can preserve an existing
 model's full preparation pipeline; its declared source files are hash checked.
 See [MODEL_CONTRACT.md](docs/MODEL_CONTRACT.md).
@@ -118,6 +135,29 @@ An exported bundle contains `model.onnx`, `profile.json`, `labels.json`, and
 against accidental edits. Executable shape/class/finite-output checks run
 before serving. Hashes are not signatures and cannot prove that the author
 declared the correct training semantics.
+
+## Capture, replay and evaluate
+
+The optional desktop adapter produces canonical frames and a capture receipt
+from an authorized video. Use Python 3.11 for the tested capture environment:+
+```sh
+python -m pip install ".[video]"
+vsl-stream extract-video --video sample.mp4 --pose-model pose_landmarker_lite.task --hand-model hand_landmarker.task --out capture/frames.json --target-fps 15
+vsl-stream replay --bundle my_bundle --frames capture/frames.json --capture-receipt capture/frames.capture.json --config server.json --receipt replay.json
+vsl-stream evaluate --annotations annotations.json --predictions predictions.json --out event_report.json
+```
+
+Detector assets must be obtained separately under their applicable terms.
+The receipt identifies the video, assets, extraction policy and exact trace;
+it does not certify compatibility with the recognizer's training extractor.
+Desktop and Android use distinct extraction identifiers and need an explicit
+comparison before interchangeability can be claimed. See [video capture](docs/VIDEO_CAPTURE.md)
+and [event evaluation](docs/EVENT_EVALUATION.md) for input schemas and clock rules.
+
+`clients/android/` contains a small CameraX/MediaPipe capture and file-replay
+application, plus a reusable transport module. Follow the [Android guide](docs/ANDROID_CLIENT.md)
+for asset preparation, build instructions and physical-device checks. Compilation
+and transport unit tests do not establish camera quality or phone latency.
 
 ## Python library use
 
@@ -177,9 +217,8 @@ Redis. Shared state, worker migration and reconnect continuation are outside
 this version's contract. Softmax `confidence` is an uncalibrated class score.
 
 The default bind is loopback for local testing. A network deployment should use
-the organization's normal reverse proxy/access controls. An external camera or
-MediaPipe extractor belongs in a client adapter; the included browser example
-replays keypoint files.
+the organization's normal reverse proxy/access controls. Camera extraction belongs in the optional desktop/Android adapters; the
+included browser example replays keypoint files.
 
 ## Replay and development verification
 
@@ -228,7 +267,8 @@ continuous-language segmentation, Jetson performance, or acceptance by a journal
 | Path | Purpose |
 | --- | --- |
 | `src/vsl_streaming/` | Segmentation, protocol, configuration, bundles and runtime |
-| `examples/` | Python client, model factory and optional owner-code bridge |
+| `examples/` | Python client, model factory, event annotations and owner-code bridge |
+| `clients/android/` | Standalone capture/replay app and reusable transport module |
 | `tests/` | Core, malformed-input, adapter, bundle and server checks |
 | `tools/verify_websocket_install.py` | Installed-package TCP/replay comparison |
 | `docs/` | Model contract, segment lifecycle, validation and related work |
@@ -241,3 +281,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
 ## Host replay study (9 October 2026)
 
 The [study capsule](research/host-replay-20261009/README.md) freezes runtime v0.1.2 and supplies numeric host measurements, reproducible analysis, owner-model replay tools and a prospective phone test page/protocol. Two owner-provided models agree with their direct runtimes on 30 segments each. Across 156 measured loopback connections, 5,200 requests preserve offline events with cleanup to zero active sessions. These results are host replay, not recognition accuracy or live-phone validation. Models and human traces remain private; the public synthetic path is self-contained.
+
+The 0.2.0 native-profile migration was checked separately on the same three
+owner-authorized traces: 30 segments per model produced bit-identical prepared
+tensors and identical ordered top-3 predictions against the legacy adapter
+(60 model-segment comparisons; maximum reported score difference 0).
+Another 22 generated length/profile cases had bit-identical tensors. These
+checks support compatibility on the evaluated inputs. They do not transfer the
+archived 0.1.2 timing results to 0.2.0 or establish labeled recognition accuracy.
+The optional harness is [verify_native_profiles.py](tools/verify_native_profiles.py);
+it requires authorized external assets that are not distributed here.

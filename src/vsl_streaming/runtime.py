@@ -8,6 +8,7 @@ from typing import Mapping, Sequence
 import numpy as np
 
 from .bundle import check_logits, check_session, create_session, input_shape, sha256, validate_bundle, validate_profile
+from .native_profiles import PROFILE_CONTRACTS, prepare_native_tensor
 
 
 def external_preprocessor(profile):
@@ -54,7 +55,10 @@ def _xy_landmarks(value, count, name):
 
 
 def prepare_tensor(frames: Sequence[Mapping], profile: dict) -> np.ndarray:
-    """Uniform nearest sampling; endpoints preserved; one frame may be repeated.
+    """Prepare the exact versioned profile declared by the model bundle.
+
+    Identity/shoulder profiles use uniform nearest sampling. The native model
+    profiles have their own fixed temporal contracts (see PREPROCESSING_PROFILES).
 
     The new shoulder profile uses pose indexes 0,11,12,13,14,15,16,
     followed by all left-hand and right-hand points in MediaPipe order.
@@ -65,6 +69,8 @@ def prepare_tensor(frames: Sequence[Mapping], profile: dict) -> np.ndarray:
     profile = validate_profile(profile)
     if not frames:
         raise ValueError("At least one frame is required")
+    if profile["preprocessing"]["name"] in PROFILE_CONTRACTS:
+        return prepare_native_tensor(frames, profile["preprocessing"]["name"])
     if profile["preprocessing"]["name"] == "external-python-v1":
         return external_tensor(frames, profile, external_preprocessor(profile))
     points = []

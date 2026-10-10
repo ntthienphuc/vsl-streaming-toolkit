@@ -57,3 +57,36 @@ recognizer and Jetson support are not prerequisites for explaining this toolkit'
 existing functionality. Their inclusion should follow the paper's actual claims
 and available evidence. This checklist is project-specific preparation, not an
 assertion that a journal has accepted the software or waived its requirements.
+
+## Version 0.2.0 release gate
+
+The current implementation includes native tensor preparation for two audited
+contracts, a video-to-trace adapter, a standalone Android reference client and
+an annotation-based event evaluator. These additions make the measurement path
+explicit. They do not remove the need for legally accessible application inputs
+and independent annotations.
+
+| Gate | Status / required evidence |
+| --- | --- |
+| Software packaging | Final wheel, source archive, CI results and checksums tied to the release commit |
+| Native contracts | 60 trace/model segment comparisons and 22 generated length/profile cases; host compatibility only |
+| Capture provenance | Explicit detector assets, clock/orientation policies and exact frame hashes; model compatibility requires separate checking |
+| Android integration | Build and transport checks; physical-device capture and network measurements remain pending |
+| Event quality | Implemented evaluator and synthetic calculation tests; natural-stream annotations and results remain pending |
+| Real-case reproducibility | Publicly shareable weights/data or a documented lawful acquisition route still required |
+| Performance claims | Archived v0.1.2 timings retain that version; benchmark 0.2.0 separately before reporting its timing |
+
+The article should lead with the software problem: adapting a compatible
+isolated-sign recognizer into a bounded stream of auditable segment events.
+Describe the contract, state transitions, reusable interfaces and failure
+semantics, then present version-bound correctness and application results.
+Treat the Android app as a reference integration. A new GUI, Redis replacement
+or unmeasured edge target would add scope without resolving the evidence gaps.
+
+Suggested Results order: installation and contract checks; native-profile
+compatibility; offline/WebSocket event agreement; failure and cleanup behavior;
+annotated stream quality; measured timing under stated conditions. Include only
+completed measurements, and identify pending device work as a limitation.
+The Impact section can explain reduced repeated integration work and explicit
+failure handling; external adoption or productivity improvements require
+independent evidence and should not be inferred from feature count.

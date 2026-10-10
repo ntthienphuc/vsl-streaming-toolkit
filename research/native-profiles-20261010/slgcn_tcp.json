@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "scope": "local TCP integration diagnostic, not a deployment benchmark or recognition accuracy",
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "server_has_torch": true,
+  "versions": {
+    "vsl-streaming-toolkit": "0.2.0",
+    "onnxruntime": "1.30.0",
+    "numpy": "1.26.4",
+    "fastapi": "0.142.2",
+    "uvicorn": "0.54.0",
+    "websockets": "15.0.1"
+  },
+  "input_frames": 1033,
+  "events_per_session": 10,
+  "new_session_id_on_reconnect": true,
+  "batch_fragmentation_agreement": true,
+  "offline_websocket_agreement": true,
+  "exact_retry": true,
+  "active_sessions_after_disconnect": 0,
+  "batch_sizes": [
+    31,
+    19
+  ],
+  "execution_scope": "Pre-release source import on host; not the final installed-wheel campaign or device validation"
+}

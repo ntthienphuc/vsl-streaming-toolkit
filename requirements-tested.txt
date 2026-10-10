@@ -1,9 +1,13 @@
-# Exact direct dependencies exercised on this host; not a transitive lock.
-numpy==2.0.2
-onnxruntime==1.19.2
-fastapi==0.115.12
-uvicorn==0.30.6
-websockets==13.1
-torch==2.8.0
-onnx==1.16.2
+# Direct versions exercised on Windows / Python 3.11 for v0.2.0.
+# Host snapshot with optional video and export extras; not a cross-platform lock.
+# For the frozen v0.1.2 study use its research capsule environment.
+numpy==1.26.4
+onnxruntime==1.30.0
+fastapi==0.142.2
+uvicorn==0.54.0
+websockets==15.0.1
+torch==2.8.0+cpu
+onnx==1.22.0
 httpx==0.28.1
+mediapipe==0.10.21
+opencv-contrib-python==4.11.0.86

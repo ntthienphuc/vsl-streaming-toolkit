@@ -25,15 +25,22 @@ def identity_profile(num_frames=12, num_points=3, num_channels=2):
             "preprocessing": {"name": "identity-v1", "config": {}}}
 
 
-def replay(bundle_dir, frames_path, config, batch_size=30):
+def replay(bundle_dir, frames_path, config, batch_size=30, capture_receipt=None):
     from .runtime import ONNXRecognizer
     from .protocol import MessageProcessor
     if batch_size < 1 or batch_size > config.max_batch_frames:
         raise ValueError("batch_size must be positive and at most max_batch_frames")
     frame_bytes = Path(frames_path).read_bytes()
-    frames = json.loads(frame_bytes.decode("utf-8-sig"))
-    if not isinstance(frames, list) or not frames:
-        raise ValueError("frames input must be a nonempty JSON array")
+    from .capture import load_frames
+    frames = load_frames(frames_path)
+    capture = None
+    if capture_receipt is not None:
+        from .capture import load_capture_receipt, sha256_file
+        capture = load_capture_receipt(capture_receipt, frames_path)
+        capture = {"receipt_sha256": sha256_file(capture_receipt),
+                   "extractor_profile": capture["extractor_profile"],
+                   "frames_hash_verified": True,
+                   "training_capture_compatibility": "not established by this provenance check"}
     recognizer = ONNXRecognizer(bundle_dir, provider=config.provider, top_k=config.top_k)
     processor = MessageProcessor(recognizer, config)
     responses = []
@@ -54,6 +61,7 @@ def replay(bundle_dir, frames_path, config, batch_size=30):
             "model_sha256": recognizer.manifest["sha256"]["model.onnx"],
             "input_sha256": hashlib.sha256(frame_bytes).hexdigest(),
             "bundle_sha256": dict(recognizer.manifest["sha256"]),
+            "capture": capture,
             "environment": {"python": platform.python_version(),
                             "platform": platform.platform(),
                             "versions": {name: version(name) for name in
@@ -101,6 +109,9 @@ def main(argv=None):
     for name in ("init", "demo"):
         p = sub.add_parser(name, help="Create " + ("editable model/server configuration" if name == "init" else "a synthetic export/replay fixture"))
         p.add_argument("--out", required=True)
+        if name == "init":
+            p.add_argument("--profile", choices=("mediapipe49-shoulder-v1", "spoter54-legacy-v1", "slgcn27-bone-v1"),
+                           default="mediapipe49-shoulder-v1", help="Tensor contract; must match the specific checkpoint")
     for name in ("export", "register"):
         p = sub.add_parser(name, help="Build a model bundle from " + ("PyTorch" if name == "export" else "ONNX"))
         p.add_argument("--labels", required=True)
@@ -122,19 +133,40 @@ def main(argv=None):
     p.add_argument("--config")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
-    p = sub.add_parser("replay", help="Replay a frame JSON array through the same segmentation/runtime")
+    p = sub.add_parser("replay", help="Replay JSON array or JSONL frames through the same segmentation/runtime")
     p.add_argument("--bundle", required=True)
     p.add_argument("--frames", required=True)
     p.add_argument("--config")
     p.add_argument("--batch-size", type=int, default=30)
     p.add_argument("--receipt")
+    p.add_argument("--capture-receipt", help="Optional capture sidecar whose frame-file hash must match")
+    p = sub.add_parser("extract-video", help="Extract canonical keypoints from a local video using explicit MediaPipe assets")
+    p.add_argument("--video", required=True)
+    p.add_argument("--pose-model", required=True)
+    p.add_argument("--hand-model", required=True)
+    p.add_argument("--out", required=True, help="New frame JSON; adjacent .capture.json sidecar is also written")
+    p.add_argument("--target-fps", type=float, default=15.0)
+    p.add_argument("--timestamp-mode", choices=("pos-msec", "frame-index"), default="pos-msec")
+    p.add_argument("--rotate", type=int, choices=(0, 90, 180, 270), default=0, help="Clockwise rotation after decoding")
+    p.add_argument("--input-mirrored", action="store_true", help="Declare a mirrored source and horizontally undo that mirror")
+    p.add_argument("--max-frames", type=int, default=100000)
+    p = sub.add_parser("evaluate", help="Evaluate annotated word intervals and gloss events; no model execution")
+    p.add_argument("--annotations", required=True)
+    p.add_argument("--predictions", required=True, help="JSON mapping recording IDs to event arrays or replay receipt objects")
+    p.add_argument("--iou-threshold", type=float, default=0.5)
+    p.add_argument("--out")
     args = parser.parse_args(argv)
     try:
         if args.command == "init":
             out = Path(args.out)
             out.mkdir(parents=True, exist_ok=False)
             profile = identity_profile(60, 49, 2)
-            profile["preprocessing"]["name"] = "mediapipe49-shoulder-v1"
+            profile["preprocessing"]["name"] = args.profile
+            if args.profile != "mediapipe49-shoulder-v1":
+                from .native_profiles import PROFILE_CONTRACTS
+                layout, length, points, channels, sampling = PROFILE_CONTRACTS[args.profile]
+                profile.update(layout=layout, num_frames=length, num_points=points,
+                               num_channels=channels, temporal_sampling=sampling)
             write_json(out / "profile.json", profile)
             write_json(out / "labels.json", ["REPLACE_WITH_CLASS_0", "REPLACE_WITH_CLASS_1"])
             write_json(out / "model_kwargs.json", {"num_classes": 2})
@@ -160,11 +192,35 @@ def main(argv=None):
             model = ONNXRecognizer(args.bundle)
             result = {"status": "valid", "manifest": model.manifest, "profile": model.profile, "labels": model.labels}
         elif args.command == "replay":
-            result = replay(args.bundle, args.frames, load_config(args.config), args.batch_size)
+            result = replay(args.bundle, args.frames, load_config(args.config), args.batch_size, args.capture_receipt)
             if args.receipt:
                 write_json(args.receipt, result)
             print(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))
             return 0 if result["status"] == "passed" else 2
+        elif args.command == "extract-video":
+            from .video import extract_video
+            result = extract_video(args.video, args.pose_model, args.hand_model, args.out,
+                                   args.target_fps, args.timestamp_mode, args.rotate,
+                                   args.input_mirrored, args.max_frames)
+        elif args.command == "evaluate":
+            from .evaluation import evaluate_events, events_from_responses
+            from .capture import sha256_file
+            predictions = read_json(args.predictions)
+            if not isinstance(predictions, dict):
+                raise ValueError("predictions must map recording IDs to event arrays or replay receipts")
+            for key, value in predictions.items():
+                if isinstance(value, dict) and "responses" in value:
+                    predictions[key] = events_from_responses(value)
+                elif (isinstance(value, list) and value and isinstance(value[0], dict)
+                      and "type" in value[0]):
+                    predictions[key] = events_from_responses(value)
+            result = evaluate_events(read_json(args.annotations), predictions, args.iou_threshold)
+            result["inputs"] = {key: {"sha256": sha256_file(path)} for key, path in
+                                (("annotations", args.annotations), ("predictions", args.predictions))}
+            from . import __version__
+            result["software_version"] = __version__
+            if args.out:
+                write_json(args.out, result)
         else:
             import uvicorn
             from .server import create_app
@@ -177,7 +233,7 @@ def main(argv=None):
     except (ValueError, TypeError, KeyError, OSError, ImportError, RuntimeError) as error:
         print("vsl-stream: " + str(error), file=sys.stderr)
         if isinstance(error, ImportError):
-            print('Install required extras with: pip install ".[server,export]"', file=sys.stderr)
+            print('Install the required extra: pip install ".[server]", ".[export]", or ".[video]"', file=sys.stderr)
         return 2
 
 

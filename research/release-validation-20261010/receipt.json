@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "release": "0.2.0",
+  "date": "2026-10-10",
+  "scope": "Host software validation and Android build only; no physical-phone or sign-accuracy result",
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26300-SP0",
+  "python_tests": {
+    "run": 88,
+    "passed": 87,
+    "skipped": 1,
+    "skip_reason": "optional private-owner test; actual native migration checked separately"
+  },
+  "pip_check": "passed",
+  "artifacts": {
+    "vsl_streaming_toolkit-0.2.0-py3-none-any.whl": {
+      "bytes": 106870,
+      "sha256": "c71db0cefca5aa54054855ee6fc3da643f02f410948e6b3370eec3e218aa30ce"
+    },
+    "vsl_streaming_toolkit-0.2.0.tar.gz": {
+      "bytes": 185674,
+      "sha256": "f8a3c5073f91019414ae2909356774aa2355343bac6f8ffef89bb5dd328b09e0"
+    }
+  },
+  "android": {
+    "build": "passed",
+    "jvm_tests": 5,
+    "failures": 0,
+    "physical_device_tested": false,
+    "local_apk_sha256": "c50f097e7926e7a2e3c6e3e09bf4a73674caba788e6f1cfe95171877487f3caf",
+    "apk_public": false
+  },
+  "versions": {
+    "numpy": "1.26.4",
+    "onnxruntime": "1.30.0",
+    "onnx": "1.22.0",
+    "torch": "2.8.0+cpu",
+    "fastapi": "0.142.2",
+    "uvicorn": "0.54.0",
+    "websockets": "15.0.1",
+    "mediapipe": "0.10.21",
+    "opencv-contrib-python": "4.11.0.86"
+  },
+  "synthetic_tcp": {
+    "status": "passed",
+    "scope": "local TCP integration diagnostic, not a deployment benchmark or recognition accuracy",
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "server_has_torch": true,
+    "versions": {
+      "vsl-streaming-toolkit": "0.2.0",
+      "onnxruntime": "1.30.0",
+      "numpy": "1.26.4",
+      "fastapi": "0.142.2",
+      "uvicorn": "0.54.0",
+      "websockets": "15.0.1"
+    },
+    "input_frames": 24,
+    "events_per_session": 2,
+    "new_session_id_on_reconnect": true,
+    "batch_fragmentation_agreement": true,
+    "offline_websocket_agreement": true,
+    "exact_retry": true,
+    "active_sessions_after_disconnect": 0,
+    "batch_sizes": [
+      5,
+      1
+    ]
+  },
+  "server_only": {
+    "status": "passed",
+    "scope": "local TCP integration diagnostic, not a deployment benchmark or recognition accuracy",
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "server_has_torch": false,
+    "versions": {
+      "vsl-streaming-toolkit": "0.2.0",
+      "onnxruntime": "1.30.0",
+      "numpy": "2.4.6",
+      "fastapi": "0.142.2",
+      "uvicorn": "0.54.0",
+      "websockets": "15.0.1"
+    },
+    "input_frames": 24,
+    "events_per_session": 2,
+    "new_session_id_on_reconnect": true,
+    "batch_fragmentation_agreement": true,
+    "offline_websocket_agreement": true,
+    "exact_retry": true,
+    "active_sessions_after_disconnect": 0,
+    "batch_sizes": [
+      5,
+      1
+    ]
+  },
+  "browser": {
+    "status": "passed",
+    "scope": "synthetic browser replay and transport failure handling",
+    "browser": "Chromium",
+    "checks": [
+      "replay_json",
+      "replay_jsonl",
+      "capacity_close_before_ready",
+      "handshake_timeout_no_auto_retry",
+      "acknowledgement_timeout_no_auto_retry"
+    ],
+    "json_jsonl_events_identical_excluding_inference_ms": true,
+    "frames": 24,
+    "events_per_replay": 2,
+    "page_errors": [],
+    "active_sessions_after": 0,
+    "timeout_test_ms": 80,
+    "production_handshake_timeout_ms": 10000,
+    "production_request_timeout_ms": 30000
+  },
+  "video_detector_smoke": {
+    "decoded_frames": 12,
+    "emitted_frames": 6,
+    "input": "generated blank MJPG video",
+    "missing_pose_frames": 6,
+    "delegate": "CPU",
+    "meaning": "decoder and actual MediaPipe execution only"
+  }
+}

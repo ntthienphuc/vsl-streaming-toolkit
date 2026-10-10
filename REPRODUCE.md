@@ -25,7 +25,7 @@ already exist. Generated files are ignored by Git.
 
 ## Expected checks
 
-- The unit suite passes with no skips when server/export/dev dependencies are installed.
+- Public unit checks should pass. Optional video and owner-asset checks may skip when their dependencies or authorized inputs are absent; record each skip and its reason.
 - The demo checks those two fixture labels and records three export parity probes.
 - The TCP tool starts its own server on a temporary port and terminates it afterwards.
 - It checks exact retry, new connection identities, agreement across two batch sizes,
@@ -42,3 +42,43 @@ and checks absence of PyTorch in a separate server-only environment.
 it is not a transitive or cross-platform lock. CI records resolved environment
 versions with the validation artifacts. Tests and fixture labels establish software
 behavior, not sign recognition accuracy, field usability or Jetson performance.
+
+## Version 0.2.0 capture and event tools
+
+For the optional video path, use Python 3.11 and install `.[video]`. Follow
+[VIDEO_CAPTURE.md](docs/VIDEO_CAPTURE.md) to obtain detector assets separately,
+extract a new trace and validate its capture receipt during replay. Run
+`python -m unittest discover -s tests -p test_capture.py -v` to check capture
+contracts. Generated blank videos exercise decoding and missing detections;
+they do not establish capture quality for signing participants.
+
+Create a predictions JSON object mapping each recording ID to its replay
+receipt or canonical event array. Evaluate it with independently prepared
+annotations:
+
+```sh
+vsl-stream evaluate --annotations examples/event_annotations.json --predictions predictions.json --out event_report.json
+```
+
+The bundled annotations are synthetic. Use [EVENT_EVALUATION.md](docs/EVENT_EVALUATION.md)
+for research annotation, time alignment, split roles and metrics. Run
+`python -m unittest discover -s tests -p test_evaluation.py -v` for the evaluator's
+synthetic calculation checks.
+
+The [Android guide](docs/ANDROID_CLIENT.md) provides separate build, asset and
+physical-device steps. The server package does not require Android tooling.
+The browser only replays frame files, and does not extract camera landmarks.
+
+## Native preprocessing migration
+
+`tools/verify_native_profiles.py` compares the native SPOTER/SL-GCN contracts
+against an authorized legacy adapter using supplied traces and models. It does
+not download private inputs. Its output includes private bundle copies and must
+remain outside public release assets unless redistribution is authorized.
+Call it with `--help` for its required paths. The recorded migration comparison
+contains 60 trace/model segment cases and 22 generated length/profile cases;
+see [EVALUATION_SCOPE.md](docs/EVALUATION_SCOPE.md) for their interpretation.
+
+The research capsule under `research/host-replay-20261009` remains a **v0.1.2**
+study. Use its frozen instructions and versions to reproduce its timing table.
+Do not assign those measurements to this release without a new run.

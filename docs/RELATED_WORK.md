@@ -77,3 +77,35 @@ GitHub API trees were queried to locate implementation and license files. Revisi
 - Sign-Speak SDK: `768c78100101513bf56a499f597dfdb00551be22`; `src/network/websockets.ts` inspected.
 
 Search also surfaced `signlangtk` / `ed-fish/Sign-Language-Toolkit`, but the linked GitHub README could not be retrieved during this review. It is an unresolved search lead, excluded from positive or negative feature claims. License mentions in this document identify observed upstream declarations; dependency/version-specific distribution obligations belong in the separate license audit. Public repository visibility is not itself a reuse grant.
+
+## Architecture reassessment, 10 October 2026
+
+A closer software comparator is [Signa](https://github.com/V4HD3T/signa/tree/e997f13ef1bacb39e32935f28c89538074a0d959),
+whose inspected implementation includes hand-velocity gating in shoulder units,
+hysteresis, minimum/maximum frame limits, dropout handling, a bounded frame
+stream and explicit flushing. This is substantive prior art for streaming
+segmentation infrastructure. VSL should not claim to introduce motion gating,
+bounded stream buffering or word-by-word streaming as general ideas. These
+observations concern an inspected revision, not a benchmark of Signa against VSL.
+
+Version 0.2.0 concentrates the contribution in a documented, testable deployment
+path: explicit classifier contracts; two native compatibility transforms;
+ordered keypoint sessions; observable rejection and closure behavior; video and
+Android reference adapters with distinct extraction provenance; and event-level
+evaluation. The native migration comparison provides evidence that removing
+an external application dependency preserved selected model inputs and outputs.
+It does not establish that the normalization method or model architecture is new.
+
+The useful research question is whether this implementation makes compatible
+recognizers reusable across controlled capture and serving contexts while
+preserving their input semantics and exposing stream failure behavior. Answer
+it with integration effort, contract and failure tests, numerical comparisons,
+annotated stream outcomes and explicitly scoped performance measurements.
+A feature list alone, a new transport name or a GUI does not demonstrate an
+advantage over these comparators. Comparative absence claims require a broader
+review than the targeted inspection recorded here.
+
+The SPOTER normalization lineage is retained under Apache-2.0 in this release;
+see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). The statement above that
+no implementation was copied describes the earlier comparative review, not a
+claim that all later native compatibility code has no upstream lineage.

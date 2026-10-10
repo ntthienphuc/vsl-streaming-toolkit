@@ -1,0 +1,701 @@
+{
+  "scope": "Host-only preprocessing and ONNX integration parity; no accuracy, camera, Jetson or independent participant claim",
+  "status": "passed",
+  "harness_sha256": "27741cfae8487855f20419045b2529edb267e05b381de49a4a16ef129fa65bfc",
+  "versions": {
+    "numpy": "1.26.4",
+    "onnxruntime": "1.30.0",
+    "onnx": "1.22.0",
+    "vsl-streaming-toolkit": "0.2.0"
+  },
+  "sources": {
+    "__init__.py": "e4134b115af34ced8efab31254ab074851aef8b87f50ab12ec94ee4a20a6c0e8",
+    "bundle.py": "0b4bb72bd5899720ead6749abc1ffa5a71580eadcd989ca010ff3de3686dc236",
+    "capture.py": "f6e2ca989aecc2affba20e6c5faec77331c01c2eef7a647ac96da45c45c029b7",
+    "cli.py": "78e8c2d739bd422b1f6764f8e5532384d669403c628a85bbc7d134b83cbbe1e9",
+    "config.py": "7b777b5f6a37e42d19a1ea49d134963e368ff5b55bd1bad2a2c82029ccc60aba",
+    "core.py": "46580e0266981e00561efeba00c619f51e8a778b9085384cccfe85a864265124",
+    "demo_model.py": "387f11614b33ed187501ec3d6ff34d00e28500ace161139da038fbfabae17e86",
+    "evaluation.py": "1398c1f81b731ebe0cf1b6b55dc40c3a2dd902638b420b62ae4715ff320ee708",
+    "exporting.py": "4db8d519909fd49df070d52607b4f27da1326f2664970f7c918d0a7cfe52510a",
+    "native_profiles.py": "9a2d3c196d8c6e4535b870096dff922e4196cb6bceace0aa042815256f93a9c7",
+    "protocol.py": "41bf4466995e768ee630a10fecff719d119d8b1e7a503f2b4177d4a02c5ae874",
+    "runtime.py": "de74a4e7568c829d2714ec621a223884bacbab46b5c3ec0fc34bef640625f204",
+    "server.py": "8c92996aff94919ece303c41be73781a3ffe387bad8fb3a964dd50716f40c3e7",
+    "video.py": "9dd1d50f5ba744166712d017a335581e2a097c52d7644fd83712c3a962ed2c5f"
+  },
+  "traces": [
+    {
+      "trace_index": 0,
+      "sha256": "0a6df94488868529d606ae5abaf570fc2870c728365e776b44360650316683aa",
+      "frames": 1033,
+      "segments": 10
+    },
+    {
+      "trace_index": 1,
+      "sha256": "2473db9a7e1b308f581be7716c0ed3855e3f1b304a13c21dcca0319a86afebe5",
+      "frames": 998,
+      "segments": 10
+    },
+    {
+      "trace_index": 2,
+      "sha256": "46224d5533a9860eaf3c833423b2f55687e58e4597c125d5afdef58d66257769",
+      "frames": 999,
+      "segments": 10
+    }
+  ],
+  "backends": {
+    "spoter": {
+      "model_sha256": "c86744c714714b3a8820ed453851ce199caad64be9b04992c8f23013afd2c93c",
+      "labels_sha256": "3a3041ffbeaa8020b32b839b4cb90804c0f8e699d87c44a84d5ce68218ab83c0",
+      "native_profile": {
+        "schema_version": 1,
+        "input_name": "poses",
+        "output_name": "logits",
+        "layout": "BTVC",
+        "num_frames": 70,
+        "num_points": 54,
+        "num_channels": 2,
+        "temporal_sampling": "repeat-or-linspace-floor-v1",
+        "preprocessing": {
+          "name": "spoter54-legacy-v1",
+          "config": {}
+        }
+      },
+      "legacy_adapter_sha256": "39c7712ad7cbbf66221904edccf1122298b959c3eac966683d60b664bf92077a",
+      "legacy_dependency_hashes": [
+        "60e4d449909baf409be301e400e90cfd93115688bf08ad33b660bb64b66c303a",
+        "7e554defecaa45fe4fe5002eccc26aba4d99bc645f5bbb5bfbca783552aa633e",
+        "a71244ba7139f0ab54c198497cc3be567849346abc18f5b195562bc6de9ebb3a"
+      ],
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "segments": [
+        {
+          "segment_index": 0,
+          "frames": 34,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 1,
+          "frames": 39,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 2,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 3,
+          "frames": 37,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 4,
+          "frames": 31,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 5,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 6,
+          "frames": 33,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 7,
+          "frames": 39,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 8,
+          "frames": 37,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 9,
+          "frames": 11,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 10,
+          "frames": 10,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 11,
+          "frames": 33,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 12,
+          "frames": 36,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 13,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 14,
+          "frames": 36,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 15,
+          "frames": 27,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 16,
+          "frames": 28,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 17,
+          "frames": 32,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 18,
+          "frames": 31,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 19,
+          "frames": 42,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 20,
+          "frames": 35,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 21,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 22,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 23,
+          "frames": 37,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 24,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 25,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 26,
+          "frames": 29,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 27,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 28,
+          "frames": 42,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 29,
+          "frames": 18,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        }
+      ],
+      "generated_tensor_checks": [
+        {
+          "frames": 1,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 2,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 29,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 30,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 69,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 70,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 71,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 149,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 150,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 151,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 301,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        }
+      ]
+    },
+    "slgcn": {
+      "model_sha256": "582f3d8712f73f78c5fe7b7521609ea54a9257e5a3a877aa8c9346b8e28ebb21",
+      "labels_sha256": "3a3041ffbeaa8020b32b839b4cb90804c0f8e699d87c44a84d5ce68218ab83c0",
+      "native_profile": {
+        "schema_version": 1,
+        "input_name": "poses",
+        "output_name": "logits",
+        "layout": "BCTVM",
+        "num_frames": 150,
+        "num_points": 27,
+        "num_channels": 3,
+        "temporal_sampling": "linear-min30-repeat-or-prefix-v1",
+        "preprocessing": {
+          "name": "slgcn27-bone-v1",
+          "config": {}
+        }
+      },
+      "legacy_adapter_sha256": "39c7712ad7cbbf66221904edccf1122298b959c3eac966683d60b664bf92077a",
+      "legacy_dependency_hashes": [
+        "60e4d449909baf409be301e400e90cfd93115688bf08ad33b660bb64b66c303a",
+        "7e554defecaa45fe4fe5002eccc26aba4d99bc645f5bbb5bfbca783552aa633e",
+        "a71244ba7139f0ab54c198497cc3be567849346abc18f5b195562bc6de9ebb3a"
+      ],
+      "providers": [
+        "CPUExecutionProvider"
+      ],
+      "segments": [
+        {
+          "segment_index": 0,
+          "frames": 34,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 1,
+          "frames": 39,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 2,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 3,
+          "frames": 37,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 4,
+          "frames": 31,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 5,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 6,
+          "frames": 33,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 7,
+          "frames": 39,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 8,
+          "frames": 37,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 9,
+          "frames": 11,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 10,
+          "frames": 10,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 11,
+          "frames": 33,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 12,
+          "frames": 36,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 13,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 14,
+          "frames": 36,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 15,
+          "frames": 27,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 16,
+          "frames": 28,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 17,
+          "frames": 32,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 18,
+          "frames": 31,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 19,
+          "frames": 42,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 20,
+          "frames": 35,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 21,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 22,
+          "frames": 40,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 23,
+          "frames": 37,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 24,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 25,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 26,
+          "frames": 29,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 27,
+          "frames": 30,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 28,
+          "frames": 42,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        },
+        {
+          "segment_index": 29,
+          "frames": 18,
+          "tensor_exact": true,
+          "tensor_max_abs_error": 0.0,
+          "ordered_top3_agreement": true,
+          "score_max_abs_error": 0.0
+        }
+      ],
+      "generated_tensor_checks": [
+        {
+          "frames": 1,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 2,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 29,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 30,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 69,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 70,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 71,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 149,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 150,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 151,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        },
+        {
+          "frames": 301,
+          "tensor_exact": true,
+          "max_abs_error": 0.0
+        }
+      ]
+    }
+  }
+}

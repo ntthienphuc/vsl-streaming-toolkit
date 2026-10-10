@@ -15,3 +15,8 @@ artifacts
 *.npz
 .env*
 *.log
+clients/android/.gradle
+clients/android/.kotlin
+clients/android/**/build
+clients/android/app/src/main/assets
+clients/android/local.properties

@@ -9,7 +9,11 @@ from .core import ProtocolError, StreamSession
 
 
 def decode_message(text, max_bytes):
-    if len(text.encode("utf-8")) > max_bytes:
+    try:
+        encoded_length = len(text.encode("utf-8"))
+    except UnicodeError as error:
+        raise ProtocolError("invalid_json", str(error)) from None
+    if encoded_length > max_bytes:
         raise ProtocolError("message_too_large", "message exceeds configured byte limit")
     def invalid_constant(value):
         raise ValueError("Nonfinite JSON constant: " + value)

@@ -1,23 +1,31 @@
 # Evaluation scope and application clients
 
-Documentation audit: 10 October 2026. This page is a clarification, not a new
-model or device benchmark. The evaluated runtime remains 0.1.2 at
-`f2410017a5273ecf3158f7971f31c4b484d2e9dd`; the original research capsule remains
-frozen separately by `study-20261009`. Existing tags/assets are not replaced.
+Documentation audit: 10 October 2026. The current release is 0.2.0. Archived
+October 9 load and integration results remain attached to runtime **0.1.2** at
+`f2410017a5273ecf3158f7971f31c4b484d2e9dd` and the separate
+`study-20261009` capsule. Existing tags and assets are not replaced.
 
 ## What the public distribution contains
 
 The public project contains a Python library, CLI, ONNX onboarding commands,
 self-hosted WebSocket server, Python client and browser keypoint-file replay
-page. It does not contain a native Android/Flutter application. The browser
-does not capture camera video or extract landmarks. An existing external app
-must be adapted and tested against `/v1/stream` before claiming compatibility.
+page. Version 0.2.0 adds native `spoter54-legacy-v1` and `slgcn27-bone-v1`
+preprocessing, optional CPU video extraction, annotation-based event evaluation,
+and a standalone Kotlin Android capture/replay reference client with reusable
+transport. The original Flutter application remains separate. The browser
+replays frame files and does not extract landmarks from a camera.
+
+Android compilation and host transport tests are preparation for physical-device
+testing. They do not establish camera quality, phone energy consumption,
+network robustness, end-to-end latency or participant usability. Desktop and
+Android extraction use distinct profile identifiers. A capture receipt checks
+provenance and trace integrity; it does not prove training-extractor equivalence.
 
 The current API accepts a compatible single-input keypoint classifier with one
 raw-logit output; it cannot infer training preprocessing or class order from a
 checkpoint. Model/labels/preprocessing remain explicit developer inputs.
 
-## Evidence already available
+## Frozen v0.1.2 evidence
 
 The October 9 study reports integration around two owner-provided ONNX models,
 three recorded keypoint traces, chunk replay and unpaced loopback load. Across
@@ -71,3 +79,43 @@ resolves to Python 3.9, invoke the study virtual environment explicitly; the
 interpreter difference does not require changing the archived package versions.
 Reproducing an installed environment's inventory is distinct from proving a
 fresh installation of the entire locked toolchain.
+
+## Native profile migration evidence for 0.2.0
+
+An independent numerical comparison used the same three owner-authorized
+keypoint traces and the same ONNX weights and ordered labels, while replacing
+the legacy external preparation adapter with each native profile. All 30
+segments per model had bit-identical prepared tensors and identical ordered
+top-three predictions: 60 model-segment comparisons, with maximum reported
+score difference 0. A further 22 generated length/profile cases had bit-identical
+tensors across lengths 1, 2, 29, 30, 69, 70, 71, 149, 150, 151 and 301 for each
+profile. These inputs probe temporal contract boundaries; they do not represent
+22 independent natural-sign examples.
+
+This is **host compatibility evidence**, not source-framework export validation,
+natural-sign accuracy, independent model training or Android parity. Native
+profiles deliberately preserve historical transform conventions, including the
+SPOTER hand-index quirk documented in PREPROCESSING_PROFILES.md. Replacing that
+behavior requires a new profile and a newly validated model contract.
+
+The optional public verifier requires authorized external model/trace/adapter
+inputs. Those inputs are not distributed. Public synthetic checks are fully
+self-contained; private natural-trace checks are not independently reproducible
+from the public repository alone. Exact test totals and build outcomes belong
+to the release validation receipt and CI run for the final commit.
+
+## Remaining evidence for application claims
+
+1. Establish a shareable real-model acquisition and trace route with explicit
+   model/data terms, labels, extraction contract and split roles.
+2. Annotate natural streams independently and freeze validation/test roles;
+   report interval precision/recall, boundary errors, misses/extras, gloss edit
+   counts and rejected events. The evaluator supplies calculations, not labels.
+3. Measure the Android path on a physical device, including orientation,
+   missing-hand/pose behavior, timestamps, reconnects and overload counters.
+4. If reporting 0.2.0 latency or capacity, rerun its locked release and disclose
+   hardware, provider, warmup, trace pacing, concurrency and error counts.
+
+A functional toolkit and a measured recognition system support different
+claims. The release is prepared for those experiments; it does not substitute
+protocol parity or artifact hashes for the missing application evidence.

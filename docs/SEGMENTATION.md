@@ -84,3 +84,26 @@ count, gaps, emitted segments, received frames, last sequence and time, current
 buffer size, and debounce counts. Idle observations are not counted as discarded
 candidate frames. Capacity limits pending segment storage; callers should also
 limit batch size to bound validation memory.
+
+## Interpretation limits for evaluation
+
+An emitted segment is a processing unit, not an established linguistic word
+boundary. Sustained activity can produce multiple `capacity` segments; a short
+remainder may then be discarded. `min_segment_frames` counts all retained
+frames, including inactive or missing-pose observations in the closing debounce
+tail. It does not enforce a minimum number of valid signing observations.
+Missing or low-visibility pose is inactive and can close a segment when both
+down thresholds are met. Report these event reasons when evaluating natural
+sign boundaries and repeated-word behavior.
+
+`discarded_candidate_frames` counts abandoned onset candidates and insufficient
+pending segments. It excludes ordinary idle frames and is not a complete
+dropped-frame or capture-loss counter. Transport/capture losses require separate
+sequence and timestamp accounting.
+
+Protocol retry caching is bounded and local to one connection or replay
+processor. A matching retained request ID returns the stored response without
+running inference or changing stream state again. Cache eviction and reconnects
+do not provide durable exactly-once delivery or cross-connection continuation.
+These software guarantees should be evaluated separately from gloss accuracy,
+linguistic boundary quality, and camera-to-result latency.

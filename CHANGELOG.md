@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 — 2026-10-10
+
+- Add native SPOTER-54 legacy and SL-GCN-27 bone preprocessing profiles with
+  explicit tensor, temporal-sampling and landmark-order contracts. Preserve
+  the historical SPOTER hand ordering for checkpoint compatibility; retain
+  upstream Apache-2.0 attribution and license for the derived implementation.
+- Add optional offline MediaPipe video capture, asset/video/frame hashes,
+  explicit timestamp and orientation policies, and JSON array/JSONL replay.
+- Add a standalone Android capture/file-replay reference client with a reusable
+  WebSocket transport, bounded queuing, correlated acknowledgments and stop
+  drain/flush behavior. Physical-device validation remains a separate phase.
+- Add annotated event evaluation for temporal matching, missed/extra intervals,
+  boundary errors, gloss edits and rejected/forced-closure events. Public
+  fixtures are synthetic and do not establish recognition accuracy.
+- Add model-profile initialization, capture-receipt checks and an evaluation
+  CLI; expand release verification, third-party notices and journal guidance.
+- Normalize literal malformed Unicode in the public protocol decoder into the
+  same bounded validation-error path as malformed JSON strings.
+
+The frozen `study-20261009` results evaluate v0.1.2. They are not measurements of
+the new capture client or native profiles in this release.
+
 ## 0.1.2 — 2026-10-09
 
 - Keep parser-error responses bounded and valid UTF-8 even when malformed JSON

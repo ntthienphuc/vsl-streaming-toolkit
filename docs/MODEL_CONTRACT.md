@@ -38,7 +38,8 @@ as an artifact edit.
 
 ## Temporal preparation
 
-For S accepted frames and target length T, sampling indexes are
+For `identity-v1` and `mediapipe49-shoulder-v1` with `uniform-nearest-v1`,
+S accepted frames and target length T use sampling indexes
 `floor(linspace(0,S-1,T)+0.5)`. Endpoints are retained and short sequences repeat
 nearest frames. The rule is deterministic and independent of batch boundaries.
 It is not cyclic padding or timestamp-based interpolation. **Train with this
@@ -71,6 +72,26 @@ The geometry segmenter separately uses configured visibility thresholds. This
 new 49-point profile is **not** the historical 54-point SPOTER transform or
 27-point SL-GCN/DSTA bone/motion transform. Do not switch an existing checkpoint
 to it without retraining or establishing a separately specified adapter.
+
+### Native compatibility profiles (0.2.0)
+
+`spoter54-legacy-v1` fixes BTVC shape `[1,70,54,2]` and
+`repeat-or-linspace-floor-v1`: cycle short sequences, otherwise retain
+endpoint-inclusive, equally spaced indices rounded down. It preserves the
+historical hand-index normalization convention deliberately.
+
+`slgcn27-bone-v1` fixes BCTVM shape `[1,3,150,27,1]` and
+`linear-min30-repeat-or-prefix-v1`: expand short sequences to 30 frames,
+normalize, then cycle to 150 frames or retain the first 150. The three channels
+are bone x, bone y and confidence, not xyz.
+
+Both native profiles require empty `preprocessing.config` and reject conflicting
+layout, dimensions or sampling identifiers. They prepare tensors without an
+external owner checkout. Their precise ordering, missing-point behavior and
+numerical conventions are specified in [PREPROCESSING_PROFILES.md](PREPROCESSING_PROFILES.md).
+They are checkpoint-specific compatibility contracts, not automatic support for
+all models with those architecture names. The generic uniform-nearest rule
+above does not apply to these profiles or to an external Python profile.
 
 ## Export and import
 

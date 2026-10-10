@@ -10,7 +10,7 @@ class PackagingTests(unittest.TestCase):
         canonical = (root / "LICENSE.txt").read_bytes()
         self.assertEqual((root / "Licence.txt").read_bytes(), canonical)
         package = distribution("vsl-streaming-toolkit")
-        for name in ("LICENSE.txt", "Licence.txt", "THIRD_PARTY_NOTICES.md"):
+        for name in ("LICENSE.txt", "Licence.txt", "THIRD_PARTY_NOTICES.md", "third_party/SPOTER_LICENSE.txt"):
             files = [path for path in package.files
                      if str(path).endswith(".dist-info/licenses/" + name)]
             # A source/editable run checks the source; an installed wheel must

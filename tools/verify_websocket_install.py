@@ -53,8 +53,14 @@ def check(bundle, config, frame_file, output, batch_size=31):
     from vsl_streaming.cli import replay as local_replay
     from vsl_streaming.config import load_config
     import vsl_streaming
-    data = json.loads(Path(frame_file).read_text(encoding="utf-8-sig"))
-    recorded = isinstance(data, dict)
+    from vsl_streaming.capture import load_frames
+    try:
+        data = json.loads(Path(frame_file).read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError:
+        data = load_frames(frame_file)
+    recorded = isinstance(data, dict) and "frames" in data
+    if isinstance(data, dict) and not recorded:
+        data = load_frames(frame_file)
     frames = [dict(frame, seq=index) for index, frame in enumerate(data["frames"])] if recorded else data
     with socket.socket() as selection:
         selection.bind(("127.0.0.1", 0))

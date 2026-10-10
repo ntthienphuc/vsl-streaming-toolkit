@@ -154,6 +154,12 @@ class ProtocolTests(unittest.TestCase):
 
 
 class ConfigurationAndJSONTests(unittest.TestCase):
+    def test_literal_unpaired_surrogate_is_a_structured_protocol_error(self):
+        for text in ('"\ud800"', '"\\ud800"'):
+            with self.subTest(text=repr(text)), self.assertRaises(ProtocolError) as raised:
+                decode_message(text, 1024)
+            self.assertEqual(raised.exception.code, "invalid_json")
+
     def test_error_details_are_bounded_and_utf8(self):
         result = error_response(ProtocolError("invalid_json", "\ud800" + "x" * 3000))
         self.assertEqual(len(result["error"]["message"]), 2000)

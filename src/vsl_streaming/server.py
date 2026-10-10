@@ -6,6 +6,7 @@ from copy import deepcopy
 from .config import ServerConfig
 from .core import ProtocolError
 from .protocol import MessageProcessor, decode_message, error_response
+from . import __version__
 
 
 def create_app(bundle_dir=None, config=None, recognizer=None):
@@ -22,14 +23,14 @@ def create_app(bundle_dir=None, config=None, recognizer=None):
         # Construct on the running event loop, including Python 3.9.
         application.state.inference_gate = asyncio.Semaphore(settings.inference_concurrency)
         yield
-    app = FastAPI(title="VSL Streaming Toolkit", version="0.1.2", lifespan=lifespan)
+    app = FastAPI(title="VSL Streaming Toolkit", version=__version__, lifespan=lifespan)
     active = set()
     app.state.active_sessions = active
     app.state.recognizer = model
 
     @app.get("/health")
     async def health():
-        return {"status": "ready", "active_sessions": len(active), "version": "0.1.2"}
+        return {"status": "ready", "active_sessions": len(active), "version": __version__}
 
     @app.get("/v1/config")
     async def configuration():
@@ -87,31 +88,52 @@ DEMO_HTML = """<!doctype html><html lang='en'><meta charset='utf-8'>
 <title>VSL keypoint stream</title><style>
 body{font:16px system-ui;margin:40px auto;max-width:900px;padding:0 20px;background:#f5f8fa;color:#18313c}
 button,input{font:inherit;margin:8px 6px 8px 0;padding:8px}pre{white-space:pre-wrap;background:white;padding:20px;border-radius:8px}
-</style><h1>VSL keypoint stream</h1><p>Upload a JSON array of keypoint frames compatible with the server model.
+</style><h1>VSL keypoint stream</h1><p>Upload a JSON array or JSONL file of keypoint frames compatible with the server model.
 Each frame needs an increasing seq and timestamp_ms. This page sends the file through a WebSocket;
 it does not extract landmarks from camera video.</p>
-<input type='file' id='file' accept='.json'><button id='run'>Replay file</button><button id='reset'>Reset</button>
+<input type='file' id='file' accept='.json,.jsonl'><button id='run'>Replay file</button><button id='reset'>Reset</button>
 <p id='status'>Disconnected</p><pre id='output'></pre><script>
-let ws=null,pending=new Map(),counter=0,busy=false;
+let ws=null,pending=new Map(),counter=0,busy=false,wsReady=false;
+const HANDSHAKE_TIMEOUT_MS=10000,REQUEST_TIMEOUT_MS=30000;
 const output=document.getElementById('output'),status=document.getElementById('status');
 function setBusy(value){busy=value;document.getElementById('run').disabled=value;
 document.getElementById('reset').disabled=value;document.getElementById('file').disabled=value;}
-function connect(){return new Promise((resolve,reject)=>{
-ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/v1/stream');
-ws.onmessage=e=>{const r=JSON.parse(e.data);if(r.type==='ready'){status.textContent='Connected: '+r.session_id;resolve();}
-else{const p=pending.get(r.request_id);if(p){pending.delete(r.request_id);p(r);}
-else if(r.type==='error'){output.textContent=JSON.stringify(r,null,2);for(const resolve of pending.values())resolve(r);pending.clear();}}};
-ws.onerror=()=>reject(Error('Connection failed'));ws.onclose=()=>{status.textContent='Disconnected';
-for(const p of pending.values())p({type:'error',error:{message:'Disconnected'}});pending.clear();};});}
-async function send(message){if(!ws||ws.readyState!==1)await connect();const id='browser-'+(++counter);
-return new Promise(resolve=>{pending.set(id,resolve);ws.send(JSON.stringify({...message,request_id:id}));});}
+function stopSocket(socket,error){
+if(ws===socket){ws=null;wsReady=false;status.textContent='Disconnected';}
+for(const [id,p] of pending){if(p.socket===socket){clearTimeout(p.timer);pending.delete(id);p.reject(error);}}
+if(socket.readyState<2)socket.close();}
+function connect(){if(ws&&ws.readyState===1&&wsReady)return Promise.resolve();
+return new Promise((resolve,reject)=>{
+const socket=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/v1/stream');
+ws=socket;wsReady=false;let ready=false;
+const fail=error=>{clearTimeout(timer);if(!ready)reject(error);stopSocket(socket,error);};
+const timer=setTimeout(()=>fail(Error('Connection handshake timed out')),HANDSHAKE_TIMEOUT_MS);
+socket.onmessage=e=>{let r;try{r=JSON.parse(e.data);}catch(error){fail(Error('Invalid server response'));return;}
+if(!r||typeof r!=='object'){fail(Error('Invalid server response'));return;}
+if(r.type==='ready'){if(ready){fail(Error('Unexpected repeated handshake'));return;}
+ready=true;clearTimeout(timer);wsReady=true;status.textContent='Connected: '+r.session_id;resolve();return;}
+if(!ready){fail(Error('Server did not complete the handshake'));return;}
+const p=pending.get(r.request_id);
+if(p&&p.socket===socket){clearTimeout(p.timer);pending.delete(r.request_id);p.resolve(r);}
+else{fail(Error(r.error?.message||'Uncorrelated server response; replay stopped'));}};
+socket.onerror=()=>fail(Error('Connection failed'));
+socket.onclose=e=>fail(Error('Disconnected ('+e.code+')'+(e.reason?': '+e.reason:'')));});}
+async function send(message){
+if(!ws||ws.readyState!==1||!wsReady)throw Error('Stream disconnected; restart the complete replay');
+const socket=ws,id='browser-'+(++counter);
+return new Promise((resolve,reject)=>{
+const timer=setTimeout(()=>stopSocket(socket,Error('Request acknowledgement timed out; outcome unknown. Restart the complete replay.')),REQUEST_TIMEOUT_MS);
+pending.set(id,{socket,resolve,reject,timer});
+try{socket.send(JSON.stringify({...message,request_id:id}));}catch(error){stopSocket(socket,error);}});}
 document.getElementById('reset').onclick=async()=>{if(busy)return;setBusy(true);try{
-output.textContent=JSON.stringify(await send({type:'reset'}),null,2);
+await connect();output.textContent=JSON.stringify(await send({type:'reset'}),null,2);
 }catch(e){output.textContent=e.message;}finally{setBusy(false);}};
 document.getElementById('run').onclick=async()=>{if(busy)return;setBusy(true);try{
 const file=document.getElementById('file').files[0];if(!file)throw Error('Choose a frame JSON file');
-const frames=JSON.parse(await file.text());if(!Array.isArray(frames)||!frames.length)throw Error('Expected nonempty frame array');
-const reset=await send({type:'reset'});if(reset.type==='error')throw Error(reset.error.message);
+const raw=(await file.text()).trim();
+const frames=raw.startsWith('[')?JSON.parse(raw):raw.split(/\\r?\\n/).filter(x=>x.trim()).map(x=>JSON.parse(x));
+if(!Array.isArray(frames)||!frames.length)throw Error('Expected nonempty frame array or JSONL');
+await connect();const reset=await send({type:'reset'});if(reset.type==='error')throw Error(reset.error.message);
 const config=await(await fetch('/v1/config')).json();let results=[],predicted=0,rejected=0;
 const n=Math.min(30,config.settings.max_batch_frames);
 for(let i=0;i<frames.length;i+=n){const r=await send({type:'frames',frames:frames.slice(i,i+n),flush:i+n>=frames.length});

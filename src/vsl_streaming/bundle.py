@@ -14,6 +14,8 @@ from typing import Any, Dict
 
 import numpy as np
 
+from .native_profiles import PROFILE_CONTRACTS
+
 SCHEMA_VERSION = 1
 ARTIFACTS = ("model.onnx", "labels.json", "profile.json")
 
@@ -56,9 +58,16 @@ def validate_profile(profile):
     preprocessing = profile["preprocessing"]
     if not isinstance(preprocessing, dict) or set(preprocessing) != {"name", "config"}:
         raise ValueError("preprocessing must contain exactly name and config")
-    if preprocessing["name"] not in ("identity-v1", "mediapipe49-shoulder-v1", "external-python-v1"):
+    name = preprocessing["name"]
+    if not isinstance(name, str):
+        raise ValueError("preprocessing.name must be a string")
+    if name not in ("identity-v1", "mediapipe49-shoulder-v1", "external-python-v1") and name not in PROFILE_CONTRACTS:
         raise ValueError("Unsupported preprocessing name")
     sampling = "external-python-v1" if preprocessing["name"] == "external-python-v1" else "uniform-nearest-v1"
+    if name in PROFILE_CONTRACTS:
+        layout, frames, points, channels, sampling = PROFILE_CONTRACTS[name]
+        if tuple(profile[key] for key in ("layout", "num_frames", "num_points", "num_channels")) != (layout, frames, points, channels):
+            raise ValueError(name + " requires layout=%s, num_frames=%d, num_points=%d, num_channels=%d" % (layout, frames, points, channels))
     if profile.get("temporal_sampling", sampling) != sampling:
         raise ValueError("temporal_sampling must match the selected preprocessing contract: " + sampling)
     if sampling == "external-python-v1":
