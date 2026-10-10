@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="440" viewBox="0 0 1400 440" role="img" aria-labelledby="title desc">
+  <title id="title">VSL Streaming Toolkit</title>
+  <desc id="desc">Research software connecting ordered keypoint frames to model-bound segments and inspectable gloss events.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f8fa"/><stop offset="1" stop-color="#e3f0f2"/></linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#bfd5df" stroke-width="1" opacity=".32"/></pattern>
+  </defs>
+  <rect width="1400" height="440" rx="24" fill="url(#bg)"/>
+  <rect x="780" y="0" width="620" height="440" rx="24" fill="url(#grid)"/>
+  <path d="M780 0V440" stroke="#bfd5df" opacity=".6"/>
+  <g font-family="Inter, Segoe UI, Arial, sans-serif">
+    <rect x="64" y="54" width="8" height="22" rx="4" fill="#087e77"/>
+    <text x="88" y="72" fill="#496779" font-size="18" font-weight="600" letter-spacing="2.2">RESEARCH SOFTWARE / v0.2.1</text>
+    <text x="64" y="178" fill="#142e3c" font-size="96" font-weight="750" letter-spacing="-3">VSL</text>
+    <text x="64" y="251" fill="#142e3c" font-size="63" font-weight="650" letter-spacing="-2">Streaming Toolkit</text>
+    <text x="67" y="308" fill="#496779" font-size="25">Ordered keypoints. Inspectable events.</text>
+    <g font-size="19" font-weight="600" fill="#087e77">
+      <rect x="64" y="348" width="115" height="42" rx="21" fill="#e0eeef"/><text x="89" y="375">Python</text>
+      <rect x="192" y="348" width="110" height="42" rx="21" fill="#e0eeef"/><text x="215" y="375">ONNX</text>
+      <rect x="315" y="348" width="165" height="42" rx="21" fill="#e0eeef"/><text x="337" y="375">WebSocket</text>
+    </g>
+    <g stroke="#bfd5df" stroke-width="1.5" fill="#ffffff">
+      <rect x="838" y="50" width="498" height="98" rx="14"/>
+      <rect x="838" y="171" width="498" height="98" rx="14"/>
+      <rect x="838" y="292" width="498" height="98" rx="14"/>
+    </g>
+    <path d="M1087 148V171M1081 163L1087 169L1093 163M1087 269V292M1081 284L1087 290L1093 284" fill="none" stroke="#087e77" stroke-width="2"/>
+    <g fill="#142e3c" font-size="25" font-weight="650">
+      <text x="937" y="91">Ordered frames</text>
+      <text x="937" y="212">Model-bound segments</text>
+      <text x="937" y="333">Gloss events</text>
+    </g>
+    <g fill="#496779" font-size="18">
+      <text x="937" y="122">Sequence + timestamps</text>
+      <text x="937" y="243">Profile → tensor → ONNX</text>
+      <text x="937" y="364">Predictions + failure status</text>
+    </g>
+  </g>
+  <g stroke="#087e77" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M865 113L883 86L908 101M883 86L894 117"/>
+    <rect x="865" y="203" width="45" height="36" rx="4"/>
+    <path d="M880 204V239M895 204V239M866 221H909"/>
+    <path d="M867 323H908V355H890L878 365V355H867Z"/>
+    <path d="M878 334H898M878 343H891"/>
+  </g>
+  <g fill="#087e77">
+    <circle cx="865" cy="113" r="4"/><circle cx="883" cy="86" r="4"/><circle cx="908" cy="101" r="4"/><circle cx="894" cy="117" r="4"/>
+  </g>
+</svg>

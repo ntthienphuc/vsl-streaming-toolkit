@@ -1,63 +1,59 @@
-# VSL Streaming Toolkit
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/readme-banner-dark.svg">
+  <img src="docs/assets/readme-banner-light.svg" alt="VSL Streaming Toolkit — ordered keypoints, model-bound segments and inspectable gloss events" width="100%">
+</picture>
 
-[![CI](https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-MIT%20%2B%20Apache--2.0-blue.svg)](THIRD_PARTY_NOTICES.md)
-[![Release](https://img.shields.io/github/v/release/ntthienphuc/vsl-streaming-toolkit)](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases)
+<h1 align="center">VSL Streaming Toolkit</h1>
 
-**Version 0.2.1** — Reproducible deployment of keypoint-based, isolated-sign classifiers.
+<p align="center">
+  Reproducible deployment of keypoint-based, isolated-sign classifiers.<br>
+  <strong>Python library · CLI · WebSocket service · Capture and replay adapters</strong>
+</p>
 
-[Quick start](#install-and-run-the-complete-demonstration) · [Model contracts](docs/MODEL_CONTRACT.md) · [Android client](docs/ANDROID_CLIENT.md) · [Reproduction](REPRODUCE.md) · [Evidence and limits](docs/EVALUATION_SCOPE.md)
+<p align="center">
+  <a href="https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/workflows/ci.yml"><img src="https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/tag/v0.2.1"><img src="https://img.shields.io/badge/release-v0.2.1-087e77" alt="Release v0.2.1"></a>
+  <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.9%2B-3572A5" alt="Python 3.9 and later"></a>
+  <a href="THIRD_PARTY_NOTICES.md"><img src="https://img.shields.io/badge/license-MIT%20AND%20Apache--2.0-526779" alt="License MIT AND Apache-2.0"></a>
+</p>
 
-A Python library and configurable WebSocket server for connecting a compatible
-keypoint sequence classifier to an application:
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#use-your-own-model">Model integration</a> ·
+  <a href="#capture-replay-and-evaluate">Capture &amp; evaluation</a> ·
+  <a href="#documentation">Documentation</a> ·
+  <a href="#validation-and-research-scope">Validation</a>
+</p>
 
-**Ordered keypoints → segments → model tensor → ONNX logits → gloss events.**
+---
 
-The toolkit owns buffering, motion/window segmentation, per-connection state,
-frame ordering, retry handling, model-contract checks and deployment commands.
-Developers supply a trained classifier, its exact preprocessing contract and
-ordered labels. Version 0.2.0 adds two native model-input profiles, an optional
-offline-video extractor, a standalone Android reference client with reusable
-transport, and annotation-based event evaluation. The browser remains a
-keypoint-file replay client. The original Flutter application is a separate
-project and is not required to install this toolkit.
+Connect a compatible trained classifier to an ordered keypoint stream, then
+inspect the segments, predictions and failures it produces. The toolkit manages
+buffering, segmentation, model-input checks and per-connection state. You supply
+the model, its preprocessing contract and labels in training class order.
 
-| Component | Responsibility | Entry point |
-| --- | --- | --- |
-| Library and server | Ordered streams, bounded segmentation, inference and session lifecycle | `serve` |
-| Model onboarding | Labels, tensor contract, artifact hashes and export checks | `init`, `export`, `register`, `inspect` |
-| Video adapter | CPU pose/hand extraction, clock policy and trace provenance | `extract-video` |
-| Android reference client | Camera capture or file replay with reusable WebSocket transport | [Android guide](docs/ANDROID_CLIENT.md) |
-| Evaluation | Boundary matching, missed/extra events and gloss edit counts | `evaluate` |
+**Ordered frames → segments → profile-specific tensors → ONNX → gloss events**
 
-The software returns segment-level **gloss predictions**. A motion or capacity
-boundary is not proof of a linguistic word boundary. Recognition accuracy,
-natural-sign segmentation quality and physical-phone performance require
-separate evidence; see [evaluation scope](docs/EVALUATION_SCOPE.md).
+| Your task | Start here |
+| --- | --- |
+| Try the complete public workflow | [Run the synthetic demo](#quick-start) |
+| Connect a trained classifier | [Create and inspect a model bundle](#use-your-own-model) |
+| Capture or replay a stream | [Desktop and Android adapters](#capture-replay-and-evaluate) |
+| Reproduce the software checks | [REPRODUCE.md](REPRODUCE.md) |
 
-Copyright © 2026 Nguyễn Trần Thiên Phúc. Toolkit source is released under
-[MIT](LICENSE.txt), except the Apache-2.0 native preprocessing module with
-retained SPOTER lineage. The combined source expression is **MIT AND Apache-2.0**.
-Dependencies retain their own licenses; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No trained sign-language model,
-recorded keypoints, or training dataset is distributed. The runnable demo uses
-a generated synthetic model and establishes execution, not recognition accuracy.
+> **Research scope:** outputs are segment-level gloss predictions. The public demo
+> is synthetic. Natural-sign accuracy, linguistic boundaries and physical-device
+> performance need separate experiments; see [evidence and limits](docs/EVALUATION_SCOPE.md).
 
-```mermaid
-flowchart LR
-    A[Ordered keypoint frames] --> B[Per-session segment state]
-    B --> C[Contract-bound tensor preparation]
-    C --> D[ONNX classifier]
-    D --> E[Segment and gloss events]
-    F[Model profile and ordered labels] --> C
-    F --> D
-```
+## Quick start
 
-## Install and run the complete demonstration
+Use **Python 3.11** for the illustrated environment. The core/server supports
+Python 3.9+. Installation is from this repository or the [release assets](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/tag/v0.2.1).
 
-Use Python 3.9 or later. Clone the public release and create an isolated environment:
+<details open>
+<summary><strong>Windows · PowerShell</strong></summary>
 
-```powershell
+~~~powershell
 git clone https://github.com/ntthienphuc/vsl-streaming-toolkit.git
 cd vsl-streaming-toolkit
 git checkout v0.2.1
@@ -67,245 +63,271 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install ".[server,export]"
 .\.venv\Scripts\vsl-stream.exe demo --out my_demo
 .\.venv\Scripts\vsl-stream.exe serve --bundle my_demo/bundle --config my_demo/server.json
-```
+~~~
 
-On Linux/macOS use `.venv/bin/python` and `.venv/bin/vsl-stream` instead.
-For a CPU-only PyTorch installation, install `torch==2.8.0` from
-`https://download.pytorch.org/whl/cpu` before the export extras.
-The package is available from this repository and GitHub release assets;
-a PyPI publication is not assumed.
+</details>
 
-Open `http://127.0.0.1:8000/`, choose `my_demo/frames.json`, and click **Replay
-file**. The two expected outputs are `SYNTHETIC_NEGATIVE` and
-`SYNTHETIC_POSITIVE`. They are synthetic fixture labels. The demo saves
-weights, ONNX bundle, profile, settings and an execution receipt in `my_demo`.
-It refuses to overwrite an existing directory.
+<details>
+<summary><strong>Linux · shell</strong></summary>
 
-From another terminal, a programmatic client can replay the same stream:
+~~~sh
+git clone https://github.com/ntthienphuc/vsl-streaming-toolkit.git
+cd vsl-streaming-toolkit
+git checkout v0.2.1
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+.venv/bin/python -m pip install ".[server,export]"
+.venv/bin/vsl-stream demo --out my_demo
+.venv/bin/vsl-stream serve --bundle my_demo/bundle --config my_demo/server.json
+~~~
 
-```powershell
-.\.venv\Scripts\python.exe examples/websocket_client.py --frames my_demo/frames.json
-```
+</details>
 
-An inference-only server needs `pip install ".[server]"`; PyTorch is only
-required for export/demo. Model registration/checking is included in the base
-installation. `requirements-tested.txt` identifies tested direct versions;
-it is not a platform-independent transitive lockfile.
+<details>
+<summary><strong>macOS · shell</strong></summary>
 
-## Bring a trained model
+~~~sh
+git clone https://github.com/ntthienphuc/vsl-streaming-toolkit.git
+cd vsl-streaming-toolkit
+git checkout v0.2.1
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install torch==2.8.0
+.venv/bin/python -m pip install ".[server,export]"
+.venv/bin/vsl-stream demo --out my_demo
+.venv/bin/vsl-stream serve --bundle my_demo/bundle --config my_demo/server.json
+~~~
 
-1. Create editable files with `vsl-stream init --out my_model_config`; use
-   `--profile spoter54-legacy-v1` or `--profile slgcn27-bone-v1` for those exact contracts.
-2. Replace `labels.json` with the **training class order**. Edit `profile.json`
-   to describe the training input names, layout, dimensions and preprocessing.
-3. Provide an importable factory that returns the actual PyTorch architecture.
-   A wrapper may adapt the model's output to one raw-logit tensor `[1, classes]`.
-4. Export the weights-only state dictionary, or register an existing ONNX file.
-5. Inspect the bundle, then start the server with suitable segmentation settings.
+The macOS path uses the standard PyTorch wheel index. Public release CI covers
+Linux and Windows; macOS instructions are not a recorded platform validation.
 
-```powershell
+</details>
+
+**Open [localhost:8000](http://127.0.0.1:8000/)** → choose
+<code>my_demo/frames.json</code> → click **Replay file**.
+
+Expected labels: <code>SYNTHETIC_NEGATIVE</code>, then <code>SYNTHETIC_POSITIVE</code>.
+The generated bundle, frames, configuration and receipt stay in <code>my_demo/</code>.
+Choose a new output directory on each run; the demo refuses to overwrite one.
+
+The complete demo needs PyTorch for model export. An inference-only installation
+uses <code>python -m pip install ".[server]"</code> and an existing compatible bundle.
+The [Windows launcher](Start-Demo.ps1) and [reproduction guide](REPRODUCE.md) provide
+the longer verification path.
+
+## What is included
+
+| Component | What it provides |
+| --- | --- |
+| **Library &amp; server** | Ordered streams, bounded segmentation, ONNX inference and connection-owned state |
+| **Model onboarding** | Editable profiles and labels, export/import, artifact hashes and executable checks |
+| **Native profiles** | Audited SPOTER-54 legacy and SL-GCN-27 bone input preparation |
+| **Capture adapters** | Optional desktop video extraction and an Android camera/file-replay reference client |
+| **Replay &amp; evaluation** | Offline receipts, temporal event matching, missed/extra intervals and gloss edit counts |
+| **Session evidence** | Opt-in server response logs with model/configuration identity and terminal state |
+
+The included browser replays keypoint files. Desktop and Android capture use
+separate optional adapters and separately obtained detector assets.
+
+## Use your own model
+
+1. Create editable configuration with <code>vsl-stream init --out my_model_config</code>.
+2. Set labels in **training class order** and make the profile match the training
+   tensor, landmark order, temporal sampling and preprocessing.
+3. Export a trusted PyTorch architecture/checkpoint, or register a single-file ONNX graph.
+4. Inspect the bundle, then serve it with the generated configuration.
+
+The commands below assume an **activated virtual environment**. On PowerShell,
+use <code>.\.venv\Scripts\Activate.ps1</code>; on Linux/macOS,
+use <code>source .venv/bin/activate</code>. You can also use the explicit executable
+paths from the quick start.
+
+<details>
+<summary><strong>PyTorch export</strong> · supply your own importable model factory</summary>
+
+~~~sh
+vsl-stream init --out my_model_config
+# Edit labels.json, profile.json and model_kwargs.json before exporting.
 vsl-stream export --factory my_package.models:build_model --checkpoint weights.pt --labels my_model_config/labels.json --profile my_model_config/profile.json --model-kwargs-file my_model_config/model_kwargs.json --out my_bundle
 vsl-stream inspect --bundle my_bundle
 vsl-stream serve --bundle my_bundle --config my_model_config/server.json
-```
+~~~
 
-For an already exported single-file ONNX graph:
+The factory must return your actual architecture and be importable in this
+environment. A bare checkpoint does not identify the architecture or preprocessing.
 
-```powershell
-vsl-stream register --model model.onnx --labels labels.json --profile profile.json --out my_bundle
-```
+</details>
 
-A custom factory must be installed or its parent directory made importable with
-`PYTHONPATH`; the example factory modules live in the source checkout. Edit
-`model_kwargs.json` to match the constructor and training class count.
-A bare checkpoint cannot reveal its architecture, landmark order or
-normalization. Those must be supplied. V1 accepts one float32 keypoint tensor,
-with `BTVC` or `BCTVM` layout, and a float32 raw-logit output `[1, classes]`.
-CTC recognizers, video CNN inputs, multi-input models and text translation need
-additional explicit adapters. The `mediapipe49-shoulder-v1` profile must
-match training. Native `spoter54-legacy-v1` and `slgcn27-bone-v1` profiles preserve
-two audited deployment contracts without an external application checkout; see
-[their ordering, temporal rules and historical quirks](docs/PREPROCESSING_PROFILES.md).
-An architecture name alone does not establish checkpoint compatibility. Use `identity-v1` when the client supplies already prepared per-frame
-model points. A trusted `external-python-v1` function can preserve an existing
-model's full preparation pipeline; its declared source files are hash checked.
-See [MODEL_CONTRACT.md](docs/MODEL_CONTRACT.md).
+<details>
+<summary><strong>Existing ONNX model</strong> · register the graph with its exact contract</summary>
 
-An exported bundle contains `model.onnx`, `profile.json`, `labels.json`, and
-`manifest.json`. SHA-256 checks bind the graph, configuration and ordered labels
-against accidental edits. Executable shape/class/finite-output checks run
-before serving. Hashes are not signatures and cannot prove that the author
-declared the correct training semantics.
+~~~sh
+vsl-stream init --out my_model_config
+# Edit the profile and ordered labels to match the supplied graph.
+vsl-stream register --model model.onnx --labels my_model_config/labels.json --profile my_model_config/profile.json --out my_bundle
+vsl-stream inspect --bundle my_bundle
+vsl-stream serve --bundle my_bundle --config my_model_config/server.json
+~~~
+
+</details>
+
+A bundle contains <code>model.onnx</code>, <code>profile.json</code>,
+<code>labels.json</code> and <code>manifest.json</code>. The supported classifier
+interface is one float32 keypoint input in <code>BTVC</code> or <code>BCTVM</code>
+layout and a raw-logit output <code>[1, K]</code>. Shape and hash checks validate
+the declared interface; the training semantics still need to be correct.
+
+Native <code>spoter54-legacy-v1</code> and <code>slgcn27-bone-v1</code> profiles
+are selectable with <code>init --profile</code>. Already prepared points can use
+<code>identity-v1</code>; a trusted existing pipeline can use
+<code>external-python-v1</code>. See the [model contract](docs/MODEL_CONTRACT.md)
+and [profile guide](docs/PREPROCESSING_PROFILES.md) for exact requirements,
+supported transforms and adapters for other model families.
 
 ## Capture, replay and evaluate
 
-The optional desktop adapter produces canonical frames and a capture receipt
-from an authorized video. Use Python 3.11 for the tested capture environment:
-```sh
-python -m pip install ".[video]"
-vsl-stream extract-video --video sample.mp4 --pose-model pose_landmarker_lite.task --hand-model hand_landmarker.task --out capture/frames.json --target-fps 15
-vsl-stream replay --bundle my_bundle --frames capture/frames.json --capture-receipt capture/frames.capture.json --config server.json --receipt replay.json
+| Path | Inputs and purpose | Guide |
+| --- | --- | --- |
+| **Desktop video** | Authorized video + detector assets → canonical keypoints and capture receipt | [Video capture](docs/VIDEO_CAPTURE.md) |
+| **Android** | Camera capture or frame-file replay with correlated WebSocket acknowledgments | [Android client](docs/ANDROID_CLIENT.md) |
+| **Offline replay** | A compatible bundle + frame trace → events and a provenance receipt | [Reproduction](REPRODUCE.md) |
+| **Event evaluation** | Independent annotations + predicted events → boundary and gloss metrics | [Evaluation guide](docs/EVENT_EVALUATION.md) |
+
+Replay the public demo offline in the activated environment:
+
+~~~sh
+vsl-stream replay --bundle my_demo/bundle --frames my_demo/frames.json --config my_demo/server.json --batch-size 5 --receipt replay_receipt.json
+~~~
+
+Try the **standalone synthetic evaluator** without capturing a video or loading a model:
+
+~~~sh
 vsl-stream evaluate --annotations examples/event_annotations.json --predictions examples/event_predictions.json --out event_report.json
-```
+~~~
 
-Detector assets must be obtained separately under their applicable terms.
-The receipt identifies the video, assets, extraction policy and exact trace;
-it does not certify compatibility with the recognizer's training extractor.
-Desktop and Android use distinct extraction identifiers and need an explicit
-comparison before interchangeability can be claimed. See [video capture](docs/VIDEO_CAPTURE.md)
-and [event evaluation](docs/EVENT_EVALUATION.md) for input schemas and clock rules.
-The bundled evaluation inputs are deliberately imperfect synthetic events;
-their expected metrics check the evaluator, not recognition performance.
+Those bundled events deliberately contain errors to exercise the evaluator.
+For research measurements, use the predictions and independent annotations for
+your own recording. Desktop and Android extractor identities differ; comparison
+and clock alignment are required before treating their outputs as interchangeable.
 
-`clients/android/` contains a small CameraX/MediaPipe capture and file-replay
-application, plus a reusable transport module. Follow the [Android guide](docs/ANDROID_CLIENT.md)
-for asset preparation, build instructions and physical-device checks. Compilation
-and transport unit tests do not establish camera quality or phone latency.
+## Python API
 
-## Python library use
+An integration fragment using an **existing compatible bundle and frame list**:
 
-```python
-from vsl_streaming import StreamConfig, StreamSession
+~~~python
+import json
+
+from vsl_streaming import StreamSession
+from vsl_streaming.config import load_config
 from vsl_streaming.runtime import ONNXRecognizer
 
-recognizer = ONNXRecognizer("my_bundle")
-session = StreamSession(StreamConfig(mode="fixed_window", window_frames=60))
+with open("my_demo/frames.json", encoding="utf-8") as source:
+    frames = json.load(source)
+
+recognizer = ONNXRecognizer("my_demo/bundle")
+session = StreamSession(load_config("my_demo/server.json").stream)
+
 for segment in session.push_batch(frames):
-    print(segment.to_dict(include_frames=False), recognizer.predict_segment(segment.frames))
+    print(recognizer.predict_segment(segment.frames))
 for segment in session.flush():
     print(recognizer.predict_segment(segment.frames))
-```
+~~~
 
-Each frame requires `seq` and `timestamp_ms`; both increase strictly. In
-fixed-window identity mode, it also contains `points` shaped `[points,channels]`.
-Signing-space segmentation uses `pose_landmarks` (33), `left_hand_landmarks`
-(21), and `right_hand_landmarks` (21), with finite `x,y,z,visibility` values.
-Missing pose is inactive. Missing/invalid pose inside an emitted segment may
-cause the selected model preprocessor to reject that segment explicitly.
-
-See [SEGMENTATION.md](docs/SEGMENTATION.md) for exact geometry, dropout, gap,
-capacity, minimum-length, flush and discarded-frame behavior. The heuristic is
-not a validated general boundary detector for continuous sign language.
+Frames need strictly increasing <code>seq</code> and <code>timestamp_ms</code>.
+The representation depends on the selected profile and segmentation mode.
+See [segmentation](docs/SEGMENTATION.md) for prepared points, pose/hands,
+missing landmarks, gaps, capacity limits and flush behavior.
 
 ## WebSocket protocol and configuration
 
-Connect to `/v1/stream`, receive a `ready` message, then send:
+Connect to <code>/v1/stream</code>, wait for <code>ready</code>, then send
+<code>frames</code>, <code>flush</code>, <code>reset</code> or <code>status</code>
+with a <code>request_id</code>. Responses identify that request and report
+completed events or explicit errors. The
+[client example](examples/websocket_client.py) replays a frame file:
 
-```json
-{"type":"frames","request_id":"capture-1","frames":[{"seq":0,"timestamp_ms":0,"points":[[0.1,0.2],[0.3,0.4]]}],"flush":false}
-```
+~~~sh
+python examples/websocket_client.py --frames my_demo/frames.json
+~~~
 
-The points dimensions must match the loaded bundle; the illustration above is
-not the 49-point default. Commands `flush`, `reset`, and `status` contain only
-`type` and `request_id`. Every response identifies the request and contains all
-completed segment events or an explicit error. `frames` with `flush:true`
-appends/validates that batch first, then closes pending work.
+Each connection starts with independent state. Recent exact retries use a bounded
+cache; disconnect ends that guarantee and discards unfinished work.
+Segmentation settings, providers, session capacity, byte limits and inference
+concurrency live in the configuration. See [deployment](docs/DEPLOYMENT.md)
+for server and container use; <code>/health</code> and <code>/v1/config</code>
+expose readiness and the public contract.
 
-Each connection owns its state. A new connection starts fresh; disconnect drops
-unfinished work. Recent exact retries return cached results without rerunning
-inference. Reusing an ID with changed content is rejected. Cache expiry and
-disconnect end the retry guarantee; this is not durable exactly-once delivery.
-Frame-validation errors reject the full batch without advancing the session.
-At the configured transport byte limit, Uvicorn may close an oversized
-WebSocket message with code 1009 before an application JSON error is possible.
-Segment-inference errors report rejected events after segmentation; they do not
-roll back the accepted stream. No errors are silently relabeled as successful.
+Enable **full server response evidence** for a local session:
 
-`server.json` configures segmentation, provider, top-k, session capacity, batch
-and byte limits, retry cache size and inference concurrency. Unknown settings
-are rejected. `/health` and `/v1/config` expose readiness and the public contract.
-One outstanding acknowledged message per client bounds pending application
-work. The server runs one process with bounded session buffers; it needs no
-Redis. Shared state, worker migration and reconnect continuation are outside
-this version's contract. Softmax `confidence` is an uncalibrated class score.
+~~~sh
+vsl-stream serve --bundle my_demo/bundle --config my_demo/server.json --session-log-dir artifacts/session-evidence
+~~~
 
-For sessions used as experimental evidence, enable a local response log:
+The [session logging guide](docs/SESSION_LOGGING.md) explains model/configuration
+identity, completion checks and disk failures. A completed server send does not
+prove client receipt; keep the client diagnostics and capture trace as well.
 
-```sh
-vsl-stream serve --bundle my_bundle --config server.json --session-log-dir artifacts/device-test/server-logs
-```
+## Documentation
 
-The opt-in log preserves session identity, model/configuration provenance,
-responses and termination state beyond the Android client's bounded display
-history. A server send does not establish client receipt; retain the Android
-diagnostics and trace as well. See [session logging](docs/SESSION_LOGGING.md)
-for completion checks, privacy and disk-failure behavior.
+| Read this when you need to… | Documentation |
+| --- | --- |
+| Match a classifier's tensor and output semantics | [Model contract](docs/MODEL_CONTRACT.md) · [Preprocessing profiles](docs/PREPROCESSING_PROFILES.md) |
+| Understand stream boundaries and failure behavior | [Segmentation](docs/SEGMENTATION.md) · [Deployment](docs/DEPLOYMENT.md) |
+| Capture on desktop or Android | [Video adapter](docs/VIDEO_CAPTURE.md) · [Android client](docs/ANDROID_CLIENT.md) |
+| Evaluate events and retain session evidence | [Event evaluation](docs/EVENT_EVALUATION.md) · [Session logging](docs/SESSION_LOGGING.md) |
+| Repeat public checks | [Reproduction](REPRODUCE.md) · [Validation scope](docs/VALIDATION.md) |
+| Review research positioning | [Related software](docs/RELATED_WORK.md) · [Evidence boundaries](docs/EVALUATION_SCOPE.md) |
+| Prepare the software paper | [Readiness](docs/PAPER_READINESS.md) · [SoftwareX checklist](docs/SOFTWAREX_SUBMISSION.md) |
 
-The default bind is loopback for local testing. A network deployment should use
-the organization's normal reverse proxy/access controls. Camera extraction belongs in the optional desktop/Android adapters; the
-included browser example replays keypoint files.
+## Validation and research scope
 
-## Replay and development verification
+The [v0.2.1 release](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/tag/v0.2.1)
+includes package checksums and an artifact-bound validation receipt.
 
-```powershell
-vsl-stream replay --bundle my_bundle --frames frames.json --config server.json --batch-size 5 --receipt replay_receipt.json
-python -m unittest discover -s tests -v
-python -m build
-```
+| Evidence set | What was checked | Reference |
+| --- | --- | --- |
+| **v0.2.1 software checks** | Installed wheel, malformed-input handling, synthetic TCP/replay agreement, session logs, browser bounds and Android transport/build | [Validation receipt](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/download/v0.2.1/validation_receipt.json) · [Release CI](https://github.com/ntthienphuc/vsl-streaming-toolkit/actions/runs/38069202033) |
+| **v0.2.0 native migration** | Selected owner-authorized inputs compared with legacy model preparation and predictions | [Migration capsule](research/native-profiles-20261010/README.md) |
+| **v0.1.2 host replay study** | Frozen host/loopback measurements and direct-runtime comparisons | [Archived study](research/host-replay-20261009/README.md) |
 
-Representative export inputs can be checked with `export --validation-tensors
-real_inputs.npz`; the NPZ contains `inputs` with N float32 preprocessed samples.
-The export receipt records their hash and numerical/class agreement. The default
-three synthetic probes alone establish only an export smoke check.
+These records belong to their stated versions and inputs. New natural-sign,
+physical-camera and device-performance Results remain pending. Export probes,
+compile checks and synthetic labels establish their documented software behavior.
+Independent annotated traces and developer reuse are separate research evidence.
 
-For a self-contained verification procedure, see [REPRODUCE.md](REPRODUCE.md).
-The included `Start-Demo.ps1` prepares and serves the synthetic example on Windows.
+The proposed contribution is inspectable, reproducible integration of compatible
+classifiers through explicit model and session behavior. Existing SLR libraries
+and streaming applications inform that scope; the [related-work review](docs/RELATED_WORK.md)
+records the inspected projects and comparison limits.
 
-Replay uses the same core and runtime as the WebSocket adapter. The receipt
-records settings, the exact frame-file hash, graph/profile/ordered-label hashes,
-runtime versions, events, explicit failures and processing times.
-Frame replay is useful with experimentally recorded keypoints, but replay
-alone is not a live-camera experiment. Tests cover ordering, batch atomicity,
-multiple segments, fragmentation, gaps, dropout, flush/reset, bounded state,
-bundle tampering, export parity, sessions, retries and malformed messages.
-
-The optional Dockerfile installs the server extras and accepts mounted model
-and config directories. See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for commands.
-CI includes a synthetic CPU container check. Jetson compatibility and target
-latency require separate target checks.
-
-## Research and release preparation
-
-[RELATED_WORK.md](docs/RELATED_WORK.md) compares OpenHands, SignON, signBridge,
-SLRT Online and adjacent tools. Streaming sign apps and reusable SLR libraries
-already exist. The proposed contribution is a reusable model/keypoint contract,
-specified segment-event lifecycle, verified onboarding and reproducible
-evaluation, supported by evidence from real models and recorded streams.
-
-[VALIDATION.md](docs/VALIDATION.md) separates reproducible public checks from
-private integration evidence and outstanding research experiments. This release
-does not claim independently validated sign-recognition accuracy, general
-continuous-language segmentation, Jetson performance, or acceptance by a journal.
-The [submission checklist](docs/SOFTWAREX_SUBMISSION.md) maps software and paper
-readiness to the inspected SoftwareX sources. New camera, natural-sign and
-device-performance Results remain pending.
-
-## Project layout and citation
+<details>
+<summary><strong>Repository map</strong></summary>
 
 | Path | Purpose |
 | --- | --- |
-| `src/vsl_streaming/` | Segmentation, protocol, configuration, bundles and runtime |
-| `examples/` | Python client, model factory, event annotations and owner-code bridge |
-| `clients/android/` | Standalone capture/replay app and reusable transport module |
-| `tests/` | Core, malformed-input, adapter, bundle and server checks |
-| `tools/verify_websocket_install.py` | Installed-package TCP/replay comparison |
-| `docs/` | Model contract, segment lifecycle, validation and related work |
-| `.github/workflows/ci.yml` | Tests, export fixture, wheel and TCP checks |
+| <code>src/vsl_streaming/</code> | Core, protocol, model bundles, runtime, adapters and CLI |
+| <code>examples/</code> | Client, model factories and synthetic event fixtures |
+| <code>clients/android/</code> | Camera/replay reference app and reusable transport |
+| <code>tests/</code> · <code>tools/</code> | Regression checks and installed-package verification |
+| <code>docs/</code> | Contracts, guides and research preparation |
+| <code>research/</code> | Version-bound study and validation capsules |
+| <code>.github/workflows/ci.yml</code> | Python, optional video, Android, container and browser checks |
 
-Use [CITATION.cff](CITATION.cff) to cite this software version. Bug reports and
-model-integration questions belong in [GitHub Issues](https://github.com/ntthienphuc/vsl-streaming-toolkit/issues).
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
+</details>
 
-## Host replay study (9 October 2026)
+## Citation, license and contributing
 
-The [study capsule](research/host-replay-20261009/README.md) freezes runtime v0.1.2 and supplies numeric host measurements, reproducible analysis, owner-model replay tools and a prospective phone test page/protocol. Two owner-provided models agree with their direct runtimes on 30 segments each. Across 156 measured loopback connections, 5,200 requests preserve offline events with cleanup to zero active sessions. These results are host replay, not recognition accuracy or live-phone validation. Models and human traces remain private; the public synthetic path is self-contained.
+Use [CITATION.cff](CITATION.cff) or GitHub's **Cite this repository** control to
+cite the software version used in your study.
 
-The 0.2.0 native-profile migration was checked separately on the same three
-owner-authorized traces: 30 segments per model produced bit-identical prepared
-tensors and identical ordered top-3 predictions against the legacy adapter
-(60 model-segment comparisons; maximum reported score difference 0).
-Another 22 generated length/profile cases had bit-identical tensors. These
-checks support compatibility on the evaluated inputs. They do not transfer the
-archived 0.1.2 timing results to 0.2.0 or establish labeled recognition accuracy.
-The optional harness is [verify_native_profiles.py](tools/verify_native_profiles.py);
-it requires authorized external assets that are not distributed here.
+Copyright © 2026 Nguyễn Trần Thiên Phúc. The combined source license is
+**MIT AND Apache-2.0**: toolkit code uses [MIT](LICENSE.txt), while the native
+preprocessing module retains SPOTER lineage and Apache-2.0 notices.
+See [third-party notices](THIRD_PARTY_NOTICES.md) for attribution and separate
+model, detector and dependency terms. Trained recognition models, human recordings
+and training datasets are obtained separately.
+
+[Open an issue](https://github.com/ntthienphuc/vsl-streaming-toolkit/issues) for a
+bug or integration question. See [CONTRIBUTING.md](CONTRIBUTING.md) before sending
+a change, and [CHANGELOG.md](CHANGELOG.md) for release history.
