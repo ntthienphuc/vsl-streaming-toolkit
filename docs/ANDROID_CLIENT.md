@@ -41,4 +41,3 @@ The response log is capped at 500 entries and records omissions. Export full ser
 6. Measure extraction duration, admitted FPS, queue loss, round-trip latency and total user-observed delay separately. Repeat sustained sessions and interruption/resume tests; report device temperature, power mode and network. Compare models only with matched input and settings.
 
 These are prospective device checks. JVM tests cover bounded admission, invalid ordering, drain/flush ordering, disconnect uncertainty and response correlation. They do not replace physical-device or human-signing evaluation. Historical host replay results belong to their frozen release and must not be relabeled as Android measurements.
-
