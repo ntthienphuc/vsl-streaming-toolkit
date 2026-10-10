@@ -76,6 +76,10 @@ def main():
                 assert observed[0] == observed[1], "JSON and JSONL replay differ"
                 page.screenshot(path=str(out / "replay.png"), full_page=True)
 
+                assert page.evaluate("ws === null && pending.size === 0")
+                checks.append("completed_replay_closes_socket")
+                # Keep one explicit idle connection to exercise capacity rejection.
+                page.evaluate("connect()")
                 excess = browser.new_page()
                 excess.goto(url)
                 excess.locator("#reset").click()
@@ -84,6 +88,58 @@ def main():
                 checks.append("capacity_close_before_ready")
                 excess.close()
                 page.close()
+
+                oversized = browser.new_page()
+                oversized.goto(url)
+                oversized.locator("#file").set_input_files({
+                    "name": "oversized.json", "mimeType": "application/json",
+                    "buffer": b" " * (10 * 1024 * 1024 + 1)})
+                oversized.locator("#run").click()
+                oversized.wait_for_function("!document.querySelector('#run').disabled")
+                assert "10 MiB" in oversized.locator("#output").inner_text()
+                assert oversized.evaluate("ws === null && counter === 0")
+                checks.append("oversized_file_rejected_before_connect")
+                oversized.close()
+
+                for mode in ("byte_limit", "history_limit"):
+                    bounded = browser.new_page()
+                    bounded.add_init_script("""window.sentPayloads=[];
+                    const originalSend=WebSocket.prototype.send;
+                    WebSocket.prototype.send=function(data){
+                        window.sentPayloads.push(data);return originalSend.call(this,data);};""")
+                    def config_route(route, current=mode):
+                        response = route.fetch()
+                        body = response.json()
+                        if current == "byte_limit":
+                            body["settings"]["max_message_bytes"] = 1000
+                        else:
+                            body["settings"]["max_batch_frames"] = 1
+                        route.fulfill(response=response, json=body)
+                    bounded.route("**/v1/config", config_route)
+                    bounded.goto(url)
+                    bounded.locator("#file").set_input_files(str(frame_array))
+                    bounded.locator("#run").click()
+                    bounded.wait_for_function("!document.querySelector('#run').disabled")
+                    status = bounded.locator("#status").inner_text()
+                    assert status.startswith("Replayed %d/%d" % (len(frames), len(frames))), status
+                    payloads = bounded.evaluate("window.sentPayloads")
+                    requests = [json.loads(raw) for raw in payloads if json.loads(raw)["type"] == "frames"]
+                    assert [frame for request in requests for frame in request["frames"]] == frames
+                    assert bounded.evaluate("ws === null && pending.size === 0")
+                    responses = json.loads(bounded.locator("#output").inner_text())
+                    if mode == "byte_limit":
+                        assert all(len(raw.encode("utf-8")) <= 1000 for raw in payloads)
+                        assert len(requests) > 1
+                        events = [event for response in responses for event in response["events"]]
+                        actual = [{key: value for key, value in event.items() if key != "inference_ms"} for event in events]
+                        assert actual == observed[0], "Byte-aware batches changed predictions"
+                        checks.append("byte_limited_batches_preserve_events")
+                    else:
+                        assert len(frames) > 20, "History-bound fixture needs more than 20 frames"
+                        assert len(responses) == 20
+                        assert "omitted %d" % (len(frames) - 20) in status
+                        checks.append("history_bounded_with_visible_omitted_count")
+                    bounded.close()
 
                 # Only shorten the two application timers. Browser/Playwright
                 # internal timers and the production HTML remain unchanged.

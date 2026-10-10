@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT%20%2B%20Apache--2.0-blue.svg)](THIRD_PARTY_NOTICES.md)
 [![Release](https://img.shields.io/github/v/release/ntthienphuc/vsl-streaming-toolkit)](https://github.com/ntthienphuc/vsl-streaming-toolkit/releases)
 
-**Version 0.2.0** — Reproducible deployment of keypoint-based, isolated-sign classifiers.
+**Version 0.2.1** — Reproducible deployment of keypoint-based, isolated-sign classifiers.
 
 [Quick start](#install-and-run-the-complete-demonstration) · [Model contracts](docs/MODEL_CONTRACT.md) · [Android client](docs/ANDROID_CLIENT.md) · [Reproduction](REPRODUCE.md) · [Evidence and limits](docs/EVALUATION_SCOPE.md)
 
@@ -60,6 +60,7 @@ Use Python 3.9 or later. Clone the public release and create an isolated environ
 ```powershell
 git clone https://github.com/ntthienphuc/vsl-streaming-toolkit.git
 cd vsl-streaming-toolkit
+git checkout v0.2.1
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
@@ -139,12 +140,12 @@ declared the correct training semantics.
 ## Capture, replay and evaluate
 
 The optional desktop adapter produces canonical frames and a capture receipt
-from an authorized video. Use Python 3.11 for the tested capture environment:+
+from an authorized video. Use Python 3.11 for the tested capture environment:
 ```sh
 python -m pip install ".[video]"
 vsl-stream extract-video --video sample.mp4 --pose-model pose_landmarker_lite.task --hand-model hand_landmarker.task --out capture/frames.json --target-fps 15
 vsl-stream replay --bundle my_bundle --frames capture/frames.json --capture-receipt capture/frames.capture.json --config server.json --receipt replay.json
-vsl-stream evaluate --annotations annotations.json --predictions predictions.json --out event_report.json
+vsl-stream evaluate --annotations examples/event_annotations.json --predictions examples/event_predictions.json --out event_report.json
 ```
 
 Detector assets must be obtained separately under their applicable terms.
@@ -153,6 +154,8 @@ it does not certify compatibility with the recognizer's training extractor.
 Desktop and Android use distinct extraction identifiers and need an explicit
 comparison before interchangeability can be claimed. See [video capture](docs/VIDEO_CAPTURE.md)
 and [event evaluation](docs/EVENT_EVALUATION.md) for input schemas and clock rules.
+The bundled evaluation inputs are deliberately imperfect synthetic events;
+their expected metrics check the evaluator, not recognition performance.
 
 `clients/android/` contains a small CameraX/MediaPipe capture and file-replay
 application, plus a reusable transport module. Follow the [Android guide](docs/ANDROID_CLIENT.md)
@@ -216,6 +219,18 @@ work. The server runs one process with bounded session buffers; it needs no
 Redis. Shared state, worker migration and reconnect continuation are outside
 this version's contract. Softmax `confidence` is an uncalibrated class score.
 
+For sessions used as experimental evidence, enable a local response log:
+
+```sh
+vsl-stream serve --bundle my_bundle --config server.json --session-log-dir artifacts/device-test/server-logs
+```
+
+The opt-in log preserves session identity, model/configuration provenance,
+responses and termination state beyond the Android client's bounded display
+history. A server send does not establish client receipt; retain the Android
+diagnostics and trace as well. See [session logging](docs/SESSION_LOGGING.md)
+for completion checks, privacy and disk-failure behavior.
+
 The default bind is loopback for local testing. A network deployment should use
 the organization's normal reverse proxy/access controls. Camera extraction belongs in the optional desktop/Android adapters; the
 included browser example replays keypoint files.
@@ -261,6 +276,9 @@ evaluation, supported by evidence from real models and recorded streams.
 private integration evidence and outstanding research experiments. This release
 does not claim independently validated sign-recognition accuracy, general
 continuous-language segmentation, Jetson performance, or acceptance by a journal.
+The [submission checklist](docs/SOFTWAREX_SUBMISSION.md) maps software and paper
+readiness to the inspected SoftwareX sources. New camera, natural-sign and
+device-performance Results remain pending.
 
 ## Project layout and citation
 

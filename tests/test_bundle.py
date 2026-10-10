@@ -9,7 +9,7 @@ import numpy as np
 import onnx
 from onnx import TensorProto, helper, numpy_helper
 
-from vsl_streaming.bundle import register_onnx, validate_bundle
+from vsl_streaming.bundle import register_onnx, validate_bundle, validate_profile
 from vsl_streaming.runtime import ONNXRecognizer, prepare_tensor
 
 
@@ -73,6 +73,28 @@ class BundleTests(unittest.TestCase):
         (self.bundle / "labels.json").write_text('["thanks", "hello"]')
         with self.assertRaisesRegex(ValueError, "checksum"):
             ONNXRecognizer(self.bundle)
+
+    def test_malformed_manifest_rejected_before_runtime(self):
+        original = self.register()
+        path = self.bundle / "manifest.json"
+        malformed = [None, [], True,
+                     dict(original, schema_version=True),
+                     dict(original, schema_version=1.0),
+                     dict(original, sha256=None),
+                     dict(original, sha256=list(original["sha256"])),
+                     dict(original, sha256=dict(original["sha256"], **{"model.onnx": 42})),
+                     dict(original, num_classes=True),
+                     dict(original, num_classes=2.0)]
+        for manifest in malformed:
+            with self.subTest(manifest=manifest):
+                path.write_text(json.dumps(manifest), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    ONNXRecognizer(self.bundle)
+
+    def test_profile_version_requires_integer_not_boolean_or_float(self):
+        for value in (True, 1.0, "1", None):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "schema_version"):
+                validate_profile(dict(PROFILE, schema_version=value))
 
     def test_class_mismatch_rejected_before_publish(self):
         make_model(self.model, classes=3)

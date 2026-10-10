@@ -35,7 +35,9 @@ The evaluator accepts a dictionary mapping recording IDs to lists of canonical e
 
 `status` defaults to `predicted`; `reason` defaults to `unspecified`; `quality_flags` defaults to an empty list. A rejected inference is represented by `status: rejected` and `label: null`. Unknown flags remain visible in the report. A zero-duration predicted interval is legal (for example, one retained frame) but its temporal IoU is zero. Reversed, nonfinite or out-of-order intervals are rejected. Equal start times and overlapping predictions are retained so duplicate/split detections are measurable. The evaluator does not sort malformed logs or collapse repeated glosses.
 
-`events_from_responses(responses)` converts ordered `/v1/stream` result messages or the `responses` member of an offline replay receipt. It includes rejected events and skips an explicit `replayed: true` cached reply only when a matching original result is present. Protocol errors, inconsistent cached replies and duplicate uncached request IDs raise. Pass one recording/session at a time. This prevents a partial, error-containing response log from silently becoming a complete accuracy result; report transport failures separately.
+`events_from_responses(responses)` converts ordered `/v1/stream` result messages or the `responses` member of an offline replay receipt. It includes rejected events and skips an explicit `replayed: true` cached reply only when a matching original result is present. Protocol errors, inconsistent cached replies and duplicate uncached request IDs raise. Pass one recording/session at a time: at most one `ready` message is allowed, before all results. A second connection must have its own recording entry or an explicitly documented reconstruction outside this converter.
+
+For native results carrying `state`, the converter checks nonnegative received/buffered counts, rejects a decrease in `received_frames` (a reset or restarted stream), and requires the last uncached result to have no buffered frames. Finish capture with an acknowledged flush before evaluation. A cached reply from before that flush does not change the final state. Minimal results without state remain supported, but cannot establish that all captured frames were processed or that the stream completed. Even an empty final buffer cannot prove that an entire recording was sent; retain the input frame hash, frame counts and replay receipt, and compare them against the capture manifest. Report transport failures separately.
 
 Missing prediction keys are treated as zero emitted events and listed in `missing_prediction_recordings`. Thus a missing recording counts toward misses and deletions. Unknown recording IDs are rejected rather than excluded. Do not use missing keys as a substitute for diagnosing a failed run.
 
@@ -70,11 +72,26 @@ events = events_from_responses(receipt)
 report = evaluate_events(annotations, {"recording-001": events}, iou_threshold=0.5)
 ```
 
-After installing the toolkit, the standalone command supports either canonical event lists or response lists/receipts mapped by recording ID:
+After installing the toolkit, run this complete example from the repository root. Both input files are bundled; no model, camera or participant data is needed:
 
 ```bash
-python examples/evaluate_events.py --annotations examples/event_annotations.json --predictions predictions.json --iou-threshold 0.5 --out event_report.json
+vsl-stream evaluate --annotations examples/event_annotations.json --predictions examples/event_predictions.json --iou-threshold 0.5 --out event_report.json
 ```
+
+The hand-authored predictions deliberately contain a wrong gloss, a missed reference sign and an extra event. The first event overlaps the first reference with a 10 ms onset/end delay but has its label reversed. The second event occurs after both references. Expected fields in `event_report.json` are:
+
+| Field under `totals` | Expected value |
+|---|---|
+| `reference_signs`, `emitted_intervals` | 2, 2 |
+| `matched_signs`, `missed_signs`, `extra_intervals` | 1, 1, 1 |
+| `interval_precision`, `interval_recall`, `interval_f1` | 0.5, 0.5, 0.5 |
+| `matched_gloss_correct`, `matched_gloss_accuracy` | 0, 0 |
+| `mean_matched_temporal_iou` | 49/51, approximately 0.9607843137 |
+| `onset_error.mean_signed_ms`, `end_error.mean_signed_ms` | 10, 10 |
+| `gloss_sequence.substitutions`, `deletions`, `insertions` | 2, 0, 0 |
+| `gloss_sequence.distance`, `gloss_sequence.error_rate` | 2, 1.0 |
+
+The sequence alignment counts two substitutions under the documented tie policy; its counts need not equal temporal misses or extras. The report declares `scope: synthetic`. These expected values demonstrate evaluator behavior, not measured recognition performance. The CLI also accepts response lists or replay receipts mapped by recording ID; `python examples/evaluate_events.py` is a wrapper with the same arguments.
 
 The command stores SHA-256 hashes of its two input files. Archive the model bundle, ordered labels, extraction/preprocessing profiles, stream configuration, recordings/trace hashes and software version alongside the report. Input hashes bind files; they do not prove rights, annotation correctness, or split independence.
 

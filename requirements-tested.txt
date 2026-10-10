@@ -1,4 +1,4 @@
-# Direct versions exercised on Windows / Python 3.11 for v0.2.0.
+# Direct versions exercised on Windows / Python 3.11 for v0.2.0 and v0.2.1.
 # Host snapshot with optional video and export extras; not a cross-platform lock.
 # For the frozen v0.1.2 study use its research capsule environment.
 numpy==1.26.4

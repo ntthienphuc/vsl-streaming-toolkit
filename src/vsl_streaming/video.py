@@ -129,8 +129,10 @@ def extract_video(video_path, pose_model, hand_model, output_path, target_fps=15
     import cv2
     from . import __version__
     sampler = FrameSampler(target_fps)
-    if timestamp_mode not in ("pos-msec", "frame-index") or rotate not in (0, 90, 180, 270):
+    if timestamp_mode not in ("pos-msec", "frame-index") or type(rotate) is not int or rotate not in (0, 90, 180, 270):
         raise ValueError("invalid timestamp mode or rotation")
+    if type(input_mirrored) is not bool:
+        raise ValueError("input_mirrored must be a boolean")
     if type(max_frames) is not int or max_frames < 1:
         raise ValueError("max_frames must be a positive integer")
     paths = [Path(p) for p in (video_path, pose_model, hand_model)]

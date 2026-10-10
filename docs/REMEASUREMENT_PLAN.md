@@ -106,7 +106,7 @@ paused-reader burst does not prove sustained overload bounds.
 Provide an accessible model/ordered labels/preprocessing/trace workflow with
 clear terms. An alternative public model/trace is a new demonstration, not an
 exact replication of the private case. Keep models, datasets and participant
-permissions separate from the toolkit's MIT source license.
+permissions separate from the toolkit's MIT AND Apache-2.0 source license.
 
 Only compute recognition or boundary metrics against actual reference labels
 and boundaries. Prompts are not annotations. Preserve missed/merged/fragmented
@@ -117,7 +117,8 @@ signers. Integration-only evidence must retain the narrower conclusion.
 
 ## F6/F7: mobile and Jetson later
 
-Before phone testing, adapt the client to `/v1/stream` and validate ready,
+The released Android reference client implements `/v1/stream`; before claiming
+physical-device behavior, validate ready,
 frames/request IDs, sequence/time, canonical pose/hand order, event parsing,
 flush/reset/status, fresh reconnect and bounded queues. Audit mirror/rotation,
 handedness, visibility and sampling against training semantics.

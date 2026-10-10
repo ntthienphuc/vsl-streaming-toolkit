@@ -153,7 +153,7 @@ class LandmarkCapture(
     /** Call after analyzer executor has drained for a final stable receipt. */
     fun receipt(): JsonObject = JsonObject().apply {
         addProperty("schema_version", 1); addProperty("extractor_profile", PROFILE)
-        add("software", JsonObject().apply { addProperty("mediapipe_tasks", "0.10.26.1"); addProperty("client_version", "0.2.0"); addProperty("delegate", "CPU") })
+        add("software", JsonObject().apply { addProperty("mediapipe_tasks", "0.10.26.1"); addProperty("client_version", "0.2.1"); addProperty("delegate", "CPU") })
         add("assets", JsonObject().apply {
             add("pose", JsonObject().apply { addProperty("sha256", POSE_HASH); addProperty("source_url", POSE_URL) })
             add("hand", JsonObject().apply { addProperty("sha256", HAND_HASH); addProperty("source_url", HAND_URL) })
@@ -188,5 +188,5 @@ class LandmarkCapture(
         addProperty("capture_model_compatibility", "unvalidated; matching schema does not prove training compatibility")
     }
 
-    override fun close() { pose.close(); hands.close() }
+    override fun close() { try { pose.close() } finally { hands.close() } }
 }

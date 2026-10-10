@@ -117,13 +117,19 @@ def events_from_responses(responses):
     if not isinstance(responses, list):
         raise ValueError("responses must be a list or replay receipt with responses")
     events, requests = [], {}
+    ready_seen, result_seen = False, False
+    previous_received, last_buffered = None, None
     for response in responses:
         if not isinstance(response, dict):
             raise ValueError("response must be an object")
         if response.get("type") == "ready":
+            if ready_seen or result_seen:
+                raise ValueError("evaluate one recording/session at a time; unexpected ready response")
+            ready_seen = True
             continue
         if response.get("type") != "result":
             raise ValueError("cannot evaluate an incomplete/error response stream")
+        result_seen = True
         rid = _text(response.get("request_id"), "request_id")
         items = response.get("events")
         if not isinstance(items, list):
@@ -145,8 +151,25 @@ def events_from_responses(responses):
             continue
         if rid in requests:
             raise ValueError("duplicate result request_id without replayed=true")
+        state = response.get("state")
+        if state is not None:
+            if not isinstance(state, dict):
+                raise ValueError("result state must be an object")
+            received, buffered = state.get("received_frames"), state.get("buffered_frames")
+            if any(type(value) is not int or value < 0 for value in (received, buffered)):
+                raise ValueError("result state requires nonnegative received_frames and buffered_frames")
+            if buffered > received:
+                raise ValueError("buffered_frames cannot exceed received_frames")
+            if previous_received is not None and received < previous_received:
+                raise ValueError("recording state restarted; evaluate sessions separately")
+            previous_received = received
+            last_buffered = buffered
+        else:
+            last_buffered = None  # Missing state cannot certify stream completion.
         requests[rid] = converted
         events.extend(converted)
+    if last_buffered:
+        raise ValueError("cannot evaluate an incomplete response stream with buffered frames; flush first")
     return events
 
 

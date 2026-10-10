@@ -30,6 +30,9 @@ already exist. Generated files are ignored by Git.
 - The TCP tool starts its own server on a temporary port and terminates it afterwards.
 - It checks exact retry, new connection identities, agreement across two batch sizes,
   offline/WebSocket event agreement and zero active sessions after disconnect.
+- It also writes per-session evidence beside the TCP receipt and checks model/
+  configuration hashes, complete send records, retry deduplication and drained
+  terminal state. Choose a new receipt path for each run to preserve the logs.
 - `python -m pip check` reports no dependency conflicts.
 
 To verify the actual built wheel, install the file listed in `dist/` into a new
@@ -57,13 +60,30 @@ receipt or canonical event array. Evaluate it with independently prepared
 annotations:
 
 ```sh
-vsl-stream evaluate --annotations examples/event_annotations.json --predictions predictions.json --out event_report.json
+vsl-stream evaluate --annotations examples/event_annotations.json --predictions examples/event_predictions.json --out event_report.json
 ```
 
 The bundled annotations are synthetic. Use [EVENT_EVALUATION.md](docs/EVENT_EVALUATION.md)
 for research annotation, time alignment, split roles and metrics. Run
 `python -m unittest discover -s tests -p test_evaluation.py -v` for the evaluator's
 synthetic calculation checks.
+
+The bundled predictions intentionally contain temporal and gloss errors; see
+the guide for exact expected metrics. This command runs from a fresh checkout
+without private data or a recognizer. For a real recording, supply new
+independent annotations and its own predictions instead.
+
+## Version 0.2.1 session evidence
+
+Enable `serve --session-log-dir artifacts/device-test/server-logs` before a
+phone campaign. Follow [SESSION_LOGGING.md](docs/SESSION_LOGGING.md) to retain
+the whole server response sequence and check session completion. Local session
+logs are not automatically public research assets. The client ACK ledger and
+capture receipt remain necessary for a whole-trace parity claim.
+
+Patch validation belongs to v0.2.1. The v0.2.0 native-migration and host software
+receipts remain historical records and are not relabeled or extended by a new
+build. Phone, natural-sign accuracy and performance Results remain prospective.
 
 The [Android guide](docs/ANDROID_CLIENT.md) provides separate build, asset and
 physical-device steps. The server package does not require Android tooling.

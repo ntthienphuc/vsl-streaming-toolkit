@@ -5,11 +5,11 @@ title: "VSL Streaming Toolkit: Contract-bound keypoint classifiers and WebSocket
 authors:
   - family-names: "Nguyễn Trần"
     given-names: "Thiên Phúc"
-version: 0.2.0
+version: 0.2.1
 date-released: 2026-10-10
 license-url: "https://github.com/ntthienphuc/vsl-streaming-toolkit/blob/main/THIRD_PARTY_NOTICES.md"
 repository-code: "https://github.com/ntthienphuc/vsl-streaming-toolkit"
-url: "https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/tag/v0.2.0"
+url: "https://github.com/ntthienphuc/vsl-streaming-toolkit/releases/tag/v0.2.1"
 keywords:
   - sign language
   - keypoints

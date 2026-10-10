@@ -35,6 +35,91 @@ class StreamSessionTest {
         assertEquals(1, session.diagnostics()["offered"].asInt)
     }
 
+    @Test fun numericStringsAreRejectedWithoutConsumingSequence() {
+        val session = StreamSession("ws://127.0.0.1:1/v1/stream")
+        val invalid = frame(0).apply { addProperty("seq", "0") }
+        assertThrows(IllegalArgumentException::class.java) { session.offer(invalid) }
+        assertTrue(session.offer(frame(0)))
+    }
+
+    @Test fun stopWakesBlockedReplayProducer() {
+        val session = StreamSession("ws://127.0.0.1:1/v1/stream", capacity = 1)
+        session.offer(frame(0))
+        val entered = CountDownLatch(1); val stopped = CountDownLatch(1)
+        val producer = Thread {
+            entered.countDown()
+            try { session.offerBlocking(frame(1)); fail("Stopped producer must not admit another frame") }
+            catch (_: IllegalStateException) { stopped.countDown() }
+        }
+        producer.start(); assertTrue(entered.await(1, TimeUnit.SECONDS))
+        session.requestStop()
+        assertTrue(stopped.await(1, TimeUnit.SECONDS)); producer.join(1000)
+        assertEquals(1, session.diagnostics()["enqueued"].asInt)
+    }
+
+    @Test fun oversizeBatchFramesNeverSentAreAbortedNotUncertain() {
+        val server = MockWebServer(); val finished = CountDownLatch(1)
+        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+            override fun onOpen(ws: WebSocket, response: Response) { ws.send(ready) }
+            override fun onClosing(ws: WebSocket, code: Int, reason: String) { ws.close(code, reason) }
+        }))
+        server.start()
+        try {
+            val session = StreamSession(server.url("/v1/stream").toString().replace("http://", "ws://"), onFinished = { finished.countDown() })
+            session.offer(frame(0))
+            session.offer(frame(1).apply { addProperty("oversize", "x".repeat(100000)) })
+            session.start(); assertTrue(finished.await(5, TimeUnit.SECONDS))
+            val d = session.diagnostics()
+            assertEquals(2, d["aborted_queued_frames"].asInt)
+            assertEquals(0, d["uncertain_in_flight_frames"].asInt)
+            assertEquals(0, d["acknowledged_frames"].asInt)
+        } finally { server.shutdown() }
+    }
+
+    @Test fun matchingRequestIdWithMalformedResultIsNotAnAcknowledgment() {
+        val server = MockWebServer(); val finished = CountDownLatch(1)
+        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+            override fun onOpen(ws: WebSocket, response: Response) { ws.send(ready) }
+            override fun onMessage(ws: WebSocket, text: String) {
+                val request = JsonParser.parseString(text).asJsonObject
+                ws.send("""{"type":"result","request_id":${request["request_id"]},"events":null,"state":{}}""")
+            }
+            override fun onClosing(ws: WebSocket, code: Int, reason: String) { ws.close(code, reason) }
+        }))
+        server.start()
+        try {
+            val session = StreamSession(server.url("/v1/stream").toString().replace("http://", "ws://"), onFinished = { finished.countDown() })
+            session.offer(frame(0)); session.start(); assertTrue(finished.await(5, TimeUnit.SECONDS))
+            val d = session.diagnostics()
+            assertTrue(d["failure"].asString.contains("Malformed"))
+            assertEquals(1, d["uncertain_in_flight_frames"].asInt)
+            assertEquals(0, d["acknowledged_frames"].asInt)
+        } finally { server.shutdown() }
+    }
+
+    @Test fun serverErrorAccountsRejectedBatchAndAbortsRemainingQueue() {
+        val server = MockWebServer(); val finished = CountDownLatch(1)
+        server.enqueue(MockResponse().withWebSocketUpgrade(object : WebSocketListener() {
+            override fun onOpen(ws: WebSocket, response: Response) { ws.send(ready) }
+            override fun onMessage(ws: WebSocket, text: String) {
+                val request = JsonParser.parseString(text).asJsonObject
+                ws.send("""{"type":"error","request_id":${request["request_id"]},"error":{"code":"invalid_frames"}}""")
+            }
+            override fun onClosing(ws: WebSocket, code: Int, reason: String) { ws.close(code, reason) }
+        }))
+        server.start()
+        try {
+            val session = StreamSession(server.url("/v1/stream").toString().replace("http://", "ws://"), onFinished = { finished.countDown() })
+            repeat(3) { session.offer(frame(it)) }; session.start()
+            assertTrue(finished.await(5, TimeUnit.SECONDS))
+            val d = session.diagnostics()
+            assertEquals(2, d["server_rejected_frames"].asInt)
+            assertEquals(1, d["aborted_queued_frames"].asInt)
+            assertEquals(0, d["uncertain_in_flight_frames"].asInt)
+            assertFalse(d["flush_acknowledged"].asBoolean)
+        } finally { server.shutdown() }
+    }
+
     @Test fun stopDrainsInFlightAndQueueBeforeFlushAck() {
         val server = MockWebServer()
         val messages = Collections.synchronizedList(mutableListOf<String>())

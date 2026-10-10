@@ -8,9 +8,9 @@ import subprocess
 import sys
 
 
-def run(venv, demo):
+def run(venv, demo, wheel=None):
     python = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-    wheels = list(Path("dist").glob("*.whl"))
+    wheels = [wheel] if wheel is not None else list(Path("dist").glob("*.whl"))
     if len(wheels) != 1:
         raise RuntimeError("Expected exactly one built wheel")
     subprocess.check_call([str(python), "-m", "pip", "install", str(wheels[0].resolve()) + "[server]"])
@@ -29,5 +29,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--venv", type=Path, required=True)
     parser.add_argument("--demo", type=Path, required=True)
+    parser.add_argument("--wheel", type=Path, help="Exact wheel; default requires one wheel in dist/")
     args = parser.parse_args()
-    run(args.venv, args.demo)
+    run(args.venv, args.demo, args.wheel)

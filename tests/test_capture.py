@@ -140,6 +140,23 @@ class CaptureContractTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         validate_capture_receipt(capture_receipt(path), path)
 
+    def test_receipt_rejects_impossible_processing_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            frames = Path(tmp) / "frames.json"
+            frames.write_text('[{"seq":0,"timestamp_ms":0}]', encoding="utf-8")
+            receipt = capture_receipt(frames)
+            receipt["sampling"].update(observed_frames=5, processed_frames=2, extraction_errors=1,
+                                       skipped_rate_limit=2, missing_pose_frames_retained=3)
+            # A delivery callback may fail after a missing-pose detection was counted.
+            validate_capture_receipt(receipt, frames)
+            for field, value in (("processed_frames", 6), ("processed_frames", 3),
+                                 ("skipped_rate_limit", 3), ("extraction_errors", 2),
+                                 ("missing_pose_frames_retained", 4)):
+                bad = copy.deepcopy(receipt)
+                bad["sampling"][field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    validate_capture_receipt(bad, frames)
+
     def test_timestamp_sampling_preserves_irregular_times(self):
         sampler = FrameSampler(10)
         values = [0, 33, 66, 101, 132, 165, 220, 400]
@@ -194,6 +211,11 @@ class VideoDecodeTests(unittest.TestCase):
             assets = root / "dummy.task"
             assets.write_bytes(b"test double asset")
             output = root / "frames.json"
+            for kwargs in ({"input_mirrored": "false"}, {"rotate": False}, {"rotate": 90.0}):
+                with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                    extract_video(video, assets, assets, output, extractor_factory=EmptyExtractor, **kwargs)
+                self.assertFalse(output.exists())
+                self.assertFalse(output.with_suffix(".capture.json").exists())
             result = extract_video(video, assets, assets, output, target_fps=10,
                                    timestamp_mode="frame-index", extractor_factory=EmptyExtractor)
             self.assertEqual(result["decoded_frames"], 20)

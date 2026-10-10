@@ -9,6 +9,8 @@ my_demo/
 local_demo/
 local_bundles/
 artifacts/
+session_logs/
+*.session.jsonl
 *.log
 *_log.txt
 *.pt

@@ -3,7 +3,7 @@ android {
     namespace = "org.vslstream.demo"
     compileSdk = 36
     buildFeatures { buildConfig = true }
-    defaultConfig { applicationId = "org.vslstream.demo"; minSdk = 26; targetSdk = 36; versionCode = 1; versionName = "0.2.0" }
+    defaultConfig { applicationId = "org.vslstream.demo"; minSdk = 26; targetSdk = 36; versionCode = 3; versionName = "0.2.1" }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }

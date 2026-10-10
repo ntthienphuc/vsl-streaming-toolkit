@@ -5,6 +5,7 @@ always terminated on exit; an existing server is never stopped or reused.
 """
 import argparse
 import asyncio
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -24,12 +25,14 @@ async def replay(port, frames, batch_size):
         ready = json.loads(await ws.recv())
         if ready["type"] != "ready":
             raise RuntimeError("Missing ready handshake")
+        responses = [ready]
         for offset in range(0, len(frames), batch_size):
             request = {"type": "frames", "request_id": "network-%d" % offset,
                        "frames": frames[offset:offset + batch_size], "flush": offset + batch_size >= len(frames)}
             started = time.perf_counter()
             await ws.send(json.dumps(request))
             response = json.loads(await ws.recv())
+            responses.append(response)
             latencies.append((time.perf_counter() - started) * 1000)
             if response["type"] != "result":
                 raise RuntimeError(response)
@@ -39,9 +42,82 @@ async def replay(port, frames, batch_size):
             if offset == 0:
                 await ws.send(json.dumps(request))
                 repeated = json.loads(await ws.recv())
+                responses.append(repeated)
                 if not repeated["replayed"] or repeated["events"] != response["events"]:
                     raise RuntimeError("Exact retry behavior differs over network")
-        return {"session_id": ready["session_id"], "events": events, "latencies_ms": latencies}
+        return {"session_id": ready["session_id"], "events": events, "latencies_ms": latencies,
+                "responses": responses}
+
+def verify_session_logs(directory, sessions, bundle, settings, public_profile, package_version):
+    """Check persisted server evidence against replies actually received over TCP."""
+    from vsl_streaming.evaluation import events_from_responses
+    paths = [directory / (session["session_id"] + ".session.jsonl") for session in sessions]
+    # Health cleanup and the final log write occur in the same server teardown;
+    # tolerate observing the former just before the final JSONL record arrives.
+    for _ in range(30):
+        try:
+            records = [[json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+                       for path in paths]
+            if all(rows and rows[-1]["type"] == "session_end" for rows in records):
+                break
+        except (OSError, json.JSONDecodeError):
+            pass
+        time.sleep(0.05)
+    else:
+        raise RuntimeError("Missing completed session evidence")
+    if set(directory.glob("*.session.jsonl")) != set(paths):
+        raise RuntimeError("Unexpected session logs in this diagnostic")
+    manifest = json.loads((Path(bundle) / "manifest.json").read_text(encoding="utf-8"))
+    settings_hash = hashlib.sha256(json.dumps(settings, sort_keys=True, separators=(",", ":"),
+                                               ensure_ascii=False, allow_nan=False).encode("utf-8")).hexdigest()
+    def contains_raw_frames(value):
+        if isinstance(value, dict):
+            return any(key in ("frames", "pose_landmarks", "left_hand_landmarks", "right_hand_landmarks", "points")
+                       or contains_raw_frames(item) for key, item in value.items())
+        return isinstance(value, list) and any(contains_raw_frames(item) for item in value)
+    counts = []
+    for session, rows in zip(sessions, records):
+        if ([row["record_index"] for row in rows] != list(range(len(rows)))
+                or any(row["schema_version"] != 1 or row["session_id"] != session["session_id"] for row in rows)):
+            raise RuntimeError("Session log identity or record ordering differs")
+        kinds = [row["type"] for row in rows]
+        if (kinds[0] != "session_start" or kinds[-1] != "session_end"
+                or kinds.count("session_start") != 1 or kinds.count("session_end") != 1):
+            raise RuntimeError("Session lifecycle evidence differs")
+        start, end = rows[0], rows[-1]
+        if (start["software_version"] != package_version or start["protocol_version"] != 1
+                or start["settings"] != settings or start["settings_sha256"] != settings_hash
+                or start["profile"] != public_profile or start["bundle_sha256"] != manifest["sha256"]
+                or start["provider"] != settings["provider"] or not start["active_providers"]):
+            raise RuntimeError("Session model/configuration provenance differs")
+        response_rows = [row for row in rows if row["type"] == "response"]
+        send_rows = [row for row in rows if row["type"] == "send_complete"]
+        indices = list(range(len(response_rows)))
+        if ([row["response_index"] for row in response_rows] != indices
+                or [row["response_index"] for row in send_rows] != indices
+                or kinds[1:-1] != ["response", "send_complete"] * len(response_rows)):
+            raise RuntimeError("Response/send completion evidence is incomplete or out of order")
+        responses = [row["response"] for row in response_rows]
+        if responses != session["responses"]:
+            raise RuntimeError("Persisted responses differ from live WebSocket replies")
+        converted = events_from_responses(responses)
+        if (converted != events_from_responses(session["responses"])
+                or len(converted) != len(session["events"])
+                or sum(reply.get("replayed", False) for reply in responses) != 1):
+            raise RuntimeError("Logged event reconstruction or cached retry accounting differs")
+        if (end["reason"] not in ("client_disconnect", "connection_lost")
+                or end["buffered_frames_abandoned"] != 0 or end["state"]["buffered_frames"] != 0
+                or end["state"] != responses[-1]["state"]):
+            raise RuntimeError("Session ended with incomplete processing evidence")
+        if contains_raw_frames(rows):
+            raise RuntimeError("Session evidence unexpectedly contains raw input frames")
+        counts.append(len(response_rows))
+    return {"status": "passed", "directory": str(directory.resolve()), "completed_sessions": len(records),
+            "response_counts": counts, "model_config_provenance": True, "contiguous_indices": True,
+            "live_response_agreement": True, "cached_retry_deduplicated": True,
+            "send_complete_for_each_response": True, "buffered_frames_abandoned": 0,
+            "raw_input_frames_recorded": False,
+            "delivery_scope": "ASGI send completion checked against this diagnostic client; not a production client acknowledgement"}
 
 
 def check(bundle, config, frame_file, output, batch_size=31):
@@ -68,10 +144,16 @@ def check(bundle, config, frame_file, output, batch_size=31):
     env = dict(os.environ)
     # Keep example adapter importable; avoid importing src instead of the wheel.
     env["PYTHONPATH"] = str(project)
+    Path(output).parent.mkdir(parents=True, exist_ok=True)
+    session_log_dir = Path(output).with_suffix(".sessions").resolve()
+    session_log_dir.mkdir(parents=True, exist_ok=True)
+    if any(session_log_dir.glob("*.session.jsonl")):
+        raise RuntimeError("Use a new output path; session evidence already exists")
     log_path = Path(output).with_suffix(".server.log")
     with log_path.open("w", encoding="utf-8") as log:
         process = subprocess.Popen([sys.executable, "-m", "vsl_streaming.cli", "serve", "--bundle", str(Path(bundle).resolve()),
-                                    "--config", str(Path(config).resolve()), "--port", str(port)],
+                                    "--config", str(Path(config).resolve()), "--port", str(port),
+                                    "--session-log-dir", str(session_log_dir)],
                                    cwd=project, env=env, stdout=log, stderr=subprocess.STDOUT)
         try:
             health_url = "http://127.0.0.1:%d/health" % port
@@ -102,6 +184,11 @@ def check(bundle, config, frame_file, output, batch_size=31):
                 time.sleep(0.05)
             if cleanup["active_sessions"] != 0:
                 raise RuntimeError("Disconnected session remained active")
+            with urllib.request.urlopen("http://127.0.0.1:%d/v1/config" % port, timeout=1) as result:
+                public_configuration = json.load(result)
+            session_logging = verify_session_logs(session_log_dir, [first, second], bundle,
+                                                  load_config(config).to_dict(),
+                                                  public_configuration["profile"], vsl_streaming.__version__)
             # Local replay same installed runtime, preserving all frame content.
             adapted = Path(output).with_suffix(".frames.json")
             adapted.write_text(json.dumps(frames), encoding="utf-8")
@@ -119,6 +206,7 @@ def check(bundle, config, frame_file, output, batch_size=31):
                        "input_frames": len(frames), "events_per_session": len(first["events"]),
                        "new_session_id_on_reconnect": True, "batch_fragmentation_agreement": True,
                        "offline_websocket_agreement": True, "exact_retry": True, "active_sessions_after_disconnect": 0,
+                       "session_logging": session_logging,
                        "batch_sizes": [batch_size, max(1, batch_size - 12)],
                        "diagnostic_rtt_p50_ms": latencies[len(latencies) // 2],
                        "diagnostic_rtt_max_ms": max(latencies)}

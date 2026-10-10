@@ -205,6 +205,8 @@ class StreamSession:
         points_shape, frame_schema = self._points_shape, self._frame_schema
         for value in frames:
             frame = _frame(value)
+            if self.config.mode == "signing_space" and "points" in frame:
+                raise ProtocolError("incompatible_schema", "points frames require fixed_window mode")
             if self.config.mode == "fixed_window":
                 schema = "points" if "points" in frame else "mediapipe"
                 if frame_schema is not None and frame_schema != schema:

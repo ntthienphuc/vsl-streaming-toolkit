@@ -90,3 +90,33 @@ completed measurements, and identify pending device work as a limitation.
 The Impact section can explain reduced repeated integration work and explicit
 failure handling; external adoption or productivity improvements require
 independent evidence and should not be inferred from feature count.
+
+
+## Pre-results preparation, 10 October 2026
+
+Version 0.2.1 hardens the 0.2.0 feature set. The
+[submission matrix](SOFTWAREX_SUBMISSION.md) separates completed preparation
+from author-supplied information, publication verification and future results.
+Journal fit is a reason to prepare a careful submission, not an acceptance
+prediction.
+
+Preserve the archived v0.1.2 manuscript and host study as versioned history.
+A new candidate manuscript must update the license, native profiles, optional
+capture adapters, Android client and evaluator together. Keep its Results
+subsection explicitly pending. Do not transfer v0.1.2 host timings, private-model
+agreement counts or v0.2.0 checks to a changed binary without identifying the
+original evaluated version and justifying applicability.
+
+Before the real experiment, freeze the source commit, release and environment;
+the acquisition policy and detector assets; ordered labels and model contracts;
+the development/evaluation split; and the annotation and event-matching rules.
+Select baselines to answer a stated question, not to maximize a favorable
+difference. Report all emitted, rejected, missed and extra events under the
+predeclared rule. These are project-specific safeguards for interpretable
+results; they do not assert an unverified journal-mandated experiment count.
+
+The current unresolved evidence gates remain permissioned real-case access,
+independent natural-stream annotations, physical-device measurements for any
+phone claim, and results bound to the final measured version. They are deliberately
+left for the next experimental phase. A software release may be usable before
+the associated article is ready for submission.

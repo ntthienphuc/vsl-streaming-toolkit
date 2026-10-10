@@ -38,7 +38,8 @@ def sha256(path):
 
 
 def validate_profile(profile):
-    if not isinstance(profile, dict) or profile.get("schema_version") != SCHEMA_VERSION:
+    if (not isinstance(profile, dict) or type(profile.get("schema_version")) is not int
+            or profile["schema_version"] != SCHEMA_VERSION):
         raise ValueError("profile.schema_version must be 1")
     required = {"schema_version", "input_name", "output_name", "layout", "num_frames", "num_points", "num_channels", "preprocessing"}
     missing = required - profile.keys()
@@ -151,10 +152,19 @@ def check_logits(output, classes):
 def validate_bundle(bundle_dir) -> Dict[str, Any]:
     directory = Path(bundle_dir)
     manifest = _read_json(directory / "manifest.json")
-    if manifest.get("schema_version") != SCHEMA_VERSION or manifest.get("format") != "vsl-streaming-bundle":
+    if (not isinstance(manifest, dict) or type(manifest.get("schema_version")) is not int
+            or manifest["schema_version"] != SCHEMA_VERSION
+            or manifest.get("format") != "vsl-streaming-bundle"):
         raise ValueError("Unsupported bundle format/version")
-    if set(manifest.get("sha256", {})) != set(ARTIFACTS):
+    hashes = manifest.get("sha256")
+    if not isinstance(hashes, dict) or set(hashes) != set(ARTIFACTS):
         raise ValueError("Manifest must hash model, ordered labels, and profile")
+    if any(not isinstance(digest, str) or len(digest) != 64
+           or any(char not in "0123456789abcdef" for char in digest)
+           for digest in hashes.values()):
+        raise ValueError("Manifest hashes must be lowercase SHA-256 strings")
+    if type(manifest.get("num_classes")) is not int or manifest["num_classes"] < 1:
+        raise ValueError("Manifest num_classes must be a positive integer")
     for name in ARTIFACTS:
         if sha256(directory / name) != manifest["sha256"][name]:
             raise ValueError("Bundle checksum mismatch: " + name)

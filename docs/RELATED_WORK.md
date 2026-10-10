@@ -1,6 +1,6 @@
 # Related work and the defensible scope of VSL Streaming Toolkit
 
-Reviewed: 2026-10-03. This is a targeted primary-source review, not a systematic review or an acceptance prediction. Repository code and documentation were inspected; competing software was not installed or benchmarked. "Not established" below means the inspected material did not demonstrate the feature. It does not prove absence throughout a project or its history. No third-party implementation was copied during this review.
+Initial review: 2026-10-03; targeted primary-source refresh: 2026-10-10. This is a targeted primary-source review, not a systematic review or an acceptance prediction. Repository code and documentation were inspected; competing software was not installed or benchmarked. "Not established" below means the inspected material did not demonstrate the feature. It does not prove absence throughout a project or its history. No third-party implementation was copied during this review.
 
 The proposed user workflow is: supply a compatible trained keypoint classifier and its preprocessing/labels; export or import an ONNX model bundle; validate that bundle; run a configurable self-hosted WebSocket server; receive segment-level gloss predictions. This is a credible software purpose. Each individual ingredient already has substantial prior art.
 
@@ -8,10 +8,10 @@ The proposed user workflow is: supply a compatible trained keypoint classifier a
 
 | Project | What primary material establishes | Relationship to VSL | What was not established by this review |
 | --- | --- | --- | --- |
-| [OpenHands](https://github.com/AI4Bharat/OpenHands), [official docs](https://openhands.ai4bharat.org/en/latest/) | Installable pose-based SLR library, dataset/model abstractions, config-driven training, pretrained models, video inference. Code identifies Apache-2.0. | Strongest established comparison for a reusable pose SLR research library. VSL cannot claim to introduce a reusable sign-recognition library. | Generic ONNX bundle export plus stateful keypoint WebSocket serving was not demonstrated by the reviewed README/docs. |
+| [OpenHands](https://github.com/AI4Bharat/OpenHands), [official docs](https://openhands.readthedocs.io/) | Installable pose-based SLR library, dataset/model abstractions, config-driven training, pretrained models, video inference. Code identifies Apache-2.0. | Strongest established comparison for a reusable pose SLR research library. VSL cannot claim to introduce a reusable sign-recognition library. | Generic ONNX bundle export plus stateful keypoint WebSocket serving was not demonstrated by the reviewed README/docs. |
 | [SignON SLR pipeline](https://github.com/signon-project/wp3-slr-pipeline), [SLR component](https://github.com/signon-project/wp3-slr-component) | Training/test/predict entry points; extensible models/datasets; checkpoints carry data-processing information. The separate Apache-2.0 component is a Docker Flask service accepting a video upload and returning JSON representations. | Closest comparison for a sign-specific path from model development to deployed service. Its documented "online" mode is a video request service; that word alone does not establish frame-by-frame streaming. | Generic ONNX export/parity and a keypoint event protocol with segmented gloss events were not established. |
 | [signBridge](https://github.com/Uni-Creator/signBridge) | MIT-licensed Flutter/FastAPI application with WebSocket video input, MediaPipe processing, a 76-class video recognizer and configurable service. | Closest inspected application-level competitor for mobile-to-WebSocket recognition. A mobile demo and server integration alone offer little differentiation. | Model-independent keypoint bundle export/import and parity verification were not established. |
-| [SLRT Online](https://github.com/FangyunWei/SLRT/tree/main/Online), [EMNLP 2024 paper](https://arxiv.org/abs/2401.05336) | Online CSLR from an isolated recognizer and sliding windows, with online translation extension. Official repo includes training/evaluation material and an online branch. | Closest algorithmic precedent. Sliding an isolated recognizer over continuous input is already published. This must be cited even if VSL uses a simpler motion segmenter. | General self-hosted ONNX/WebSocket toolkit for independent classifiers was not established. Main code reuse permission needs separate verification; no project-wide license was identified in the inspected top-level tree. |
+| [SLRT Online](https://github.com/FangyunWei/SLRT/tree/main/Online), [EMNLP 2024 paper](https://aclanthology.org/2024.emnlp-main.619/) | Online CSLR from an isolated recognizer and sliding windows, with online translation extension. Official repo includes training/evaluation material and an online branch. | Closest algorithmic precedent. Sliding an isolated recognizer over continuous input is already published. This must be cited even if VSL uses a simpler motion segmenter. | General self-hosted ONNX/WebSocket toolkit for independent classifiers was not established. Main code reuse permission needs separate verification; no project-wide license was identified in the inspected top-level tree. |
 | [Sign Language Translator](https://github.com/sign-language-translator/sign-language-translator) | Apache-2.0 Python framework, CLI, language abstractions, MediaPipe embeddings and concatenative text-to-sign synthesis. README marks the illustrated neural sign-to-text model as coming soon. | Prior art for extensible sign-language software, regional adapters and landmark utilities. Documented implemented features must be distinguished from goals. | A deployed generic streaming recognition backend was not established. |
 | [Sign-Speak React SDK](https://github.com/Sign-Speak-Development/sign-speak-react-sdk) | A client SDK with WebSocket real-time ASL recognition and connection/recording controls. | Direct precedent for a developer-facing live sign-recognition interface. | Self-hosting the recognizer, arbitrary user-model ONNX export, and a clear reuse license were not established from the inspected README/tree. |
 | [DFKI VideoProcessingTools](https://github.com/DFKI-SignLanguage/VideoProcessingTools), [2022 paper](https://www.dfki.de/fileadmin/user_upload/import/12436_Nunnari2022SLTAT_VideoProcToolkit.pdf) | Reusable Python/CLI preprocessing, video transformation and landmark extraction assembled from existing tools. Repository identifies GPL-3.0. | Clear precedent that domain-specific workflow integration can be useful software research. | Streaming classifier deployment is outside the focus described by these sources. |
@@ -109,3 +109,32 @@ The SPOTER normalization lineage is retained under Apache-2.0 in this release;
 see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). The statement above that
 no implementation was copied describes the earlier comparative review, not a
 claim that all later native compatibility code has no upstream lineage.
+
+
+## Primary-source refresh and comparison design, 10 October 2026
+
+The refresh read current repository metadata and selected source files; it did
+not execute competing systems. The following immutable paths make the evidence
+reviewable independently of later changes.
+
+| Inspected source | Observation | Consequence for this release |
+| --- | --- | --- |
+| [Signa segment.py](https://github.com/V4HD3T/signa/blob/e997f13ef1bacb39e32935f28c89538074a0d959/src/signa/segment.py) | Shoulder-normalized hand velocity, enter/exit hysteresis, NaN dropout holding, minimum/maximum lengths, explicit flush and bounded deque-backed frame stream. | Direct segmentation prior art. VSL's contribution must concern its specified model/session/event contract and reproducible integration, not the existence of a stream segmenter. |
+| [signBridge WebSocket handler](https://github.com/Uni-Creator/signBridge/blob/27ee6ce90dcea8a232972ee1c4e06f1e4e77a1c8/backend/app/websocket/websocket_handler.py) | Image-frame decoding, configuration handling, bounded pending landmark work, shared worker pools, ordered results, draining and connection cleanup. | Mobile WebSocket serving and lifecycle handling already exist. The independently configurable keypoint-classifier contract is a different scope, not demonstrated superiority. |
+| [OpenHands README](https://github.com/AI4Bharat/OpenHands/blob/b9ccf9eaf2a71301fc4601a64a6af06fdef04c9b/README.md) and [repository](https://github.com/AI4Bharat/OpenHands) | Installable pose-recognition library with an official ReadTheDocs link; repository description states it is no longer actively maintained. | Fix the documentation link. Maintenance status does not erase its prior-art contribution or prove VSL is technically better. |
+| [SignON service README](https://github.com/signon-project/wp3-slr-component/blob/1b81967978e847f06059979921abcedcdc4c4193/README.md) | Docker/Flask service accepts a video upload and returns representations as JSON. | Compare the unit of input and serving lifecycle explicitly; avoid interpreting the word online as a guarantee of incremental frame streaming. |
+
+Use these systems to position scope, and use a matched direct-model implementation
+to measure any integration cost. Cross-paper accuracy or latency comparisons
+would mix language, classes, signer split, detector, model, runtime and hardware.
+A future baseline must hold those factors and the actual emitted segment frames
+constant where the question is runtime agreement or overhead. A linguistic
+segmentation comparison instead needs common independently annotated streams,
+frozen tuning rules and boundary/event metrics.
+
+The pre-results article should state three falsifiable software questions:
+can another compatible classifier be integrated using its declared contract;
+do the specified event and failure semantics survive client fragmentation and
+transport; and can another developer reproduce the documented path from the
+released artifacts? Real-world quality, timing and usability remain separate
+measurements. None is answered merely by having more commands, clients or tests.

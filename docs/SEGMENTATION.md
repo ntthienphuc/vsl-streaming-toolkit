@@ -30,6 +30,8 @@ unchanged and raise `ProtocolError`, whose `code` identifies the failure.
 Frames use `pose_landmarks` (33 objects), `left_hand_landmarks` and
 `right_hand_landmarks` (21 objects each). Each field may be omitted or null.
 Landmarks require finite `x`, `y`; `z` defaults to zero and `visibility` to one.
+Generic `points` frames are rejected atomically with `incompatible_schema`;
+they require fixed-window mode and cannot supply the signing-space geometry.
 Visibility must lie in [0, 1]. Coordinates use MediaPipe normalized image axes;
 the API permits coordinates outside [0, 1] for off-screen estimates.
 

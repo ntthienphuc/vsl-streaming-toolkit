@@ -136,6 +136,45 @@ class EvaluationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "evidence"):
             validate_annotations(bad)
 
+    def test_response_conversion_rejects_combined_sessions(self):
+        ready = {"type": "ready", "session_id": "session-1"}
+        reply = dict(type="result", request_id="r1", events=[])
+        for responses in ([ready, ready], [reply, ready],
+                          [ready, reply, dict(ready, session_id="session-2")]):
+            with self.subTest(responses=responses), self.assertRaisesRegex(ValueError, "session"):
+                events_from_responses(responses)
+
+    def test_native_responses_require_drained_buffer_and_no_reset(self):
+        from vsl_streaming.config import ServerConfig, StreamConfig
+        from vsl_streaming.protocol import MessageProcessor
+
+        class Recognizer:
+            def predict_segment(self, frames):
+                return {"label": "A"}
+
+        processor = MessageProcessor(Recognizer(), ServerConfig(stream=StreamConfig(mode="fixed_window")))
+        request = dict(type="frames", request_id="frames-1", frames=[dict(seq=0, timestamp_ms=0)])
+        buffered = processor.process(request)
+        self.assertEqual(buffered["state"]["buffered_frames"], 1)
+        with self.assertRaisesRegex(ValueError, "flush first"):
+            events_from_responses([buffered])
+        flushed = processor.process(dict(type="flush", request_id="flush-1"))
+        # A cached older reply must not replace the final, drained session state.
+        retry = processor.process(request)
+        self.assertEqual(events_from_responses([buffered, flushed, retry]),
+                         events_from_responses([buffered, flushed]))
+        reset = processor.process(dict(type="reset", request_id="reset-1"))
+        with self.assertRaisesRegex(ValueError, "restarted"):
+            events_from_responses([buffered, flushed, reset])
+
+    def test_invalid_response_state_cannot_certify_completion(self):
+        reply = dict(type="result", request_id="r1", events=[])
+        for state in ([], {}, {"received_frames": True, "buffered_frames": 0},
+                      {"received_frames": 1, "buffered_frames": 2},
+                      {"received_frames": 1, "buffered_frames": -1}):
+            with self.subTest(state=state), self.assertRaises(ValueError):
+                events_from_responses([dict(reply, state=state)])
+
     def test_speaker_overlap_reported_not_inferred_from_group(self):
         doc = annotation()
         doc["recordings"][0]["speaker_identity"] = {"status": "verified", "id": "s1", "evidence": "synthetic fixture"}

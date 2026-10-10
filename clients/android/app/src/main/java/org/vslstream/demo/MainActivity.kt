@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,6 +23,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class MainActivity : ComponentActivity() {
     private lateinit var endpoint: EditText
@@ -42,15 +44,22 @@ class MainActivity : ComponentActivity() {
     private var captureFile: File? = null
     private var captureWriter: java.io.BufferedWriter? = null
     private var traceFrames = 0L
+    private var traceBytes = 0L
+    private val sourceFailure = AtomicReference<String?>(null)
+    private var serverReady: JsonObject? = null
+    private var pendingReceipt: ByteArray? = null
+    private var pendingTrace: File? = null
+    private var exporting = false
     private val selectReplay = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) { replayUri = uri; log("Selected replay file. Press Replay to start a fresh session.") }
     }
     private val exportReceipt = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        if (uri != null) contentResolver.openOutputStream(uri)?.use { it.write(receipt().toString().toByteArray(Charsets.UTF_8)) }
+        val bytes = pendingReceipt; pendingReceipt = null
+        if (uri != null) export(uri) { output -> output.write(requireNotNull(bytes) { "Export snapshot lost; choose Export again." }) }
     }
     private val exportTrace = registerForActivityResult(ActivityResultContracts.CreateDocument("application/x-ndjson")) { uri ->
-        val file = captureFile
-        if (uri != null && file != null && !active) contentResolver.openOutputStream(uri)?.use { output -> file.inputStream().use { it.copyTo(output) } }
+        val file = pendingTrace; pendingTrace = null
+        if (uri != null) export(uri) { output -> requireNotNull(file) { "Export snapshot lost; choose Export again." }.inputStream().use { it.copyTo(output) } }
     }
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startCamera() else log("Camera permission denied. File replay remains available.")
@@ -84,8 +93,15 @@ class MainActivity : ComponentActivity() {
             else cameraPermission.launch(Manifest.permission.CAMERA)
         }
         button("Stop, drain, flush and close") { stop() }
-        button("Export final diagnostics") { if (active) log("Stop and wait for completion first.") else exportReceipt.launch("vsl-capture-receipt.json") }
-        button("Export captured canonical frames") { if (active) log("Stop and wait for completion first.") else if (captureFile != null) exportTrace.launch("vsl-capture.jsonl") else log("No camera trace in this session.") }
+        button("Export final diagnostics") {
+            if (active) log("Stop and wait for completion first.") else if (session == null) log("No completed session.")
+            else { pendingReceipt = receipt().toString().toByteArray(Charsets.UTF_8); exportReceipt.launch("vsl-capture-receipt.json") }
+        }
+        button("Export captured canonical frames") {
+            if (active) log("Stop and wait for completion first.") else if (captureFile?.exists() == true) {
+                pendingTrace = captureFile; exportTrace.launch("vsl-capture.jsonl")
+            } else log("No camera trace in this session.")
+        }
         preview = PreviewView(this)
         root.addView(preview, LinearLayout.LayoutParams(-1, 360))
         status = TextView(this).apply { text = "Idle. Debug builds allow cleartext LAN. Release builds require WSS."; setTextIsSelectable(true) }
@@ -97,25 +113,47 @@ class MainActivity : ComponentActivity() {
         status.text = (message + "\n" + status.text).take(12000)
     }
 
+    private fun export(uri: Uri, write: (java.io.OutputStream) -> Unit) {
+        exporting = true
+        executor.execute {
+            try {
+                requireNotNull(contentResolver.openOutputStream(uri, "wt")) { "Cannot open export destination" }.use(write)
+                log("Export completed.")
+            } catch (e: Exception) { log("Export failed: ${e.message}. Destination may be incomplete; retry export.") }
+            finally { runOnUiThread { exporting = false } }
+        }
+    }
+
+    private fun sourceFailed(message: String) { sourceFailure.compareAndSet(null, message); log(message) }
+
     private fun begin(): StreamSession? {
+        if (exporting) { log("Wait for the export to finish before starting a session."); return null }
         if (active) { log("A session is active. Stop it before starting another."); return null }
         val url = endpoint.text.toString().trim()
         if (!url.endsWith("/v1/stream")) { log("Use the server /v1/stream endpoint."); return null }
         if (!BuildConfig.DEBUG && !url.startsWith("wss://")) { log("Release builds require wss://."); return null }
-        stopRequested.set(false); sourceReceipt = JsonObject(); events.asList().clear(); eventLogOmitted = 0
+        stopRequested.set(false); sourceReceipt = JsonObject(); sourceFailure.set(null); serverReady = null
+        synchronized(events) { events.asList().clear(); eventLogOmitted = 0 }
         active = true
         return try {
-            StreamSession(url, onReady = { hello -> log("Ready: ${hello.get("session_id")}") }, onResult = { result ->
+            StreamSession(url, onReady = { hello -> serverReady = hello.deepCopy(); log("Ready: ${hello.get("session_id")}") }, onResult = { result ->
                 synchronized(events) { if (events.size() < 500) events.add(result.deepCopy()) else eventLogOmitted++ }
                 val output = result.get("events")
                 log("Result: $output")
             }, onFinished = { error ->
                 // Stop admission immediately; finalize camera data on its own executor.
                 stopRequested.set(true)
-                runOnUiThread { analyzer?.clearAnalyzer(); provider?.unbindAll() }
-                executor.execute {
-                    finishCapture()
-                    runOnUiThread { active = false; log(if (error == null) "Completed: flush acknowledged, socket closed." else "Failed: $error. See diagnostics; no automatic retry.") }
+                runOnUiThread {
+                    analyzer?.clearAnalyzer(); provider?.unbindAll()
+                    executor.execute {
+                        try { finishCapture() } catch (e: Exception) { sourceFailed("Capture finalization failed: ${e.message}") }
+                        runOnUiThread {
+                            active = false
+                            val problem = error ?: sourceFailure.get()
+                            log(if (problem == null) "Completed: flush acknowledged; socket close requested." else "Failed: $problem. See diagnostics; no automatic retry.")
+                            if (isDestroyed) executor.shutdown()
+                        }
+                    }
                 }
             }).also { session = it; it.start() }
         } catch (e: Exception) { active = false; log("Cannot start: ${e.message}"); null }
@@ -147,9 +185,13 @@ class MainActivity : ComponentActivity() {
                         JsonParser.parseString(text).asJsonObject.getAsJsonArray("frames").map { it.asJsonObject }
                     else text.lineSequence().filter { it.isNotBlank() }.map { JsonParser.parseString(it).asJsonObject }.toList()
                 require(frames.isNotEmpty()) { "No frames" }
-                for (frame in frames) { if (stopRequested.get()) break; stream.offerBlocking(frame) }
                 sourceReceipt.addProperty("input_frames", frames.size)
-            } catch (e: Exception) { sourceReceipt.addProperty("replay_error", e.message); log("Replay stopped: ${e.message}") }
+                for (frame in frames) { if (stopRequested.get()) break; stream.offerBlocking(frame) }
+                sourceReceipt.addProperty("replay_interrupted", stopRequested.get())
+            } catch (e: Exception) {
+                if (stopRequested.get()) sourceReceipt.addProperty("replay_interrupted", true)
+                else { sourceReceipt.addProperty("replay_error", e.message); sourceFailed("Replay stopped: ${e.message}") }
+            }
             finally { stream.requestStop() }
         }
     }
@@ -159,49 +201,60 @@ class MainActivity : ComponentActivity() {
         val target = fps.text.toString().toIntOrNull()
         if (target == null || target !in 1..30) { log("FPS must be 1–30."); return }
         val stream = begin() ?: return
-        captureFile = File(cacheDir, "vsl-capture.jsonl")
-        traceFrames = 0
+        captureFile = null
+        traceFrames = 0; traceBytes = 0
         executor.execute {
             try {
+                captureFile = File.createTempFile("vsl-capture-", ".jsonl", cacheDir)
                 captureWriter = captureFile!!.bufferedWriter(Charsets.UTF_8)
                 capture = LandmarkCapture(this, target, true, onFrame = { frame ->
                     if (!stopRequested.get()) {
+                        val line = frame.toString() + "\n"
+                        val size = line.toByteArray(Charsets.UTF_8).size
+                        require(traceBytes + size <= 20L * 1024 * 1024) { "Capture reached 20 MiB trace limit; export this session and start another." }
                         // Enqueued input can be replayed without guessing transport drop positions.
                         if (stream.offer(frame)) {
-                            captureWriter!!.append(frame.toString()).append('\n')
-                            traceFrames++
+                            captureWriter!!.append(line)
+                            traceFrames++; traceBytes += size
                         }
                     }
-                }, onError = { error -> log("Extraction failure: ${error.message}"); stopRequested.set(true); runOnUiThread { stop() } })
+                }, onError = { error -> sourceFailed("Capture failure: ${error.message}"); stopRequested.set(true); runOnUiThread { stop() } })
                 runOnUiThread {
+                    if (session !== stream || stopRequested.get()) return@runOnUiThread
                     val future = ProcessCameraProvider.getInstance(this)
                     future.addListener({
                         try {
-                            if (stopRequested.get()) return@addListener
+                            if (session !== stream || stopRequested.get()) return@addListener
                             provider = future.get()
                             require(provider!!.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) { "Front camera unavailable" }
                             val livePreview = Preview.Builder().build().also { it.setSurfaceProvider(preview.surfaceProvider) }
                             analyzer = ImageAnalysis.Builder().setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
                                 .also { it.setAnalyzer(executor, capture!!) }
                             provider!!.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, livePreview, analyzer)
-                        } catch (e: Exception) { log("Camera start failed: ${e.message}"); stop() }
+                        } catch (e: Exception) { sourceFailed("Camera start failed: ${e.message}"); stop() }
                     }, ContextCompat.getMainExecutor(this))
                 }
-            } catch (e: Exception) { log("Capture initialization failed: ${e.message}"); stream.requestStop() }
+            } catch (e: Exception) { sourceFailed("Capture initialization failed: ${e.message}"); stopRequested.set(true); stream.requestStop() }
         }
     }
 
     private fun stop() {
+        if (!active) return
         stopRequested.set(true)
         analyzer?.clearAnalyzer(); provider?.unbindAll()
-        executor.execute { finishCapture(); session?.requestStop() }
+        // Wake a blocked replay producer now; finalization follows its executor work.
+        session?.requestStop()
     }
 
     private fun finishCapture() {
-        capture?.let { sourceReceipt = it.receipt(); it.close() }; capture = null
-        captureWriter?.close(); captureWriter = null
+        val detector = capture; capture = null
+        try { detector?.let { sourceReceipt = it.receipt(); it.close() } }
+        finally { val writer = captureWriter; captureWriter = null; writer?.close() }
         captureFile?.takeIf { it.exists() }?.let { file ->
             sourceReceipt.getAsJsonObject("sampling")?.addProperty("trace_frames", traceFrames)
+            sourceReceipt.addProperty("trace_bytes", file.length())
+            sourceReceipt.addProperty("trace_limit_bytes", 20L * 1024 * 1024)
+            sourceReceipt.addProperty("trace_matches_admitted_frames", traceFrames == session?.diagnostics()?.get("enqueued")?.asLong)
             sourceReceipt.addProperty("frames_sha256", file.inputStream().use { input ->
                 val digest = MessageDigest.getInstance("SHA-256"); val buffer = ByteArray(65536)
                 while (true) { val n = input.read(buffer); if (n < 0) break; digest.update(buffer, 0, n) }
@@ -214,11 +267,20 @@ class MainActivity : ComponentActivity() {
     private fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
     private fun receipt() = sourceReceipt.deepCopy().apply {
         addProperty("schema_version", 1)
+        add("android_client", JsonObject().apply {
+            addProperty("application_id", BuildConfig.APPLICATION_ID)
+            addProperty("version_name", BuildConfig.VERSION_NAME); addProperty("version_code", BuildConfig.VERSION_CODE)
+            addProperty("build_type", BuildConfig.BUILD_TYPE)
+            addProperty("device_manufacturer", Build.MANUFACTURER); addProperty("device_model", Build.MODEL)
+            addProperty("android_release", Build.VERSION.RELEASE); addProperty("android_sdk", Build.VERSION.SDK_INT)
+        })
         add("transport", session?.diagnostics() ?: JsonObject())
+        add("server_ready", serverReady?.deepCopy())
+        addProperty("source_failure", sourceFailure.get())
         synchronized(events) { add("responses", events.deepCopy()); addProperty("response_log_omitted", eventLogOmitted) }
         addProperty("device_measurements_validated", false)
     }
 
     override fun onStop() { if (active) stop(); super.onStop() }
-    override fun onDestroy() { if (active) stop(); super.onDestroy() }
+    override fun onDestroy() { if (active) stop() else executor.shutdown(); super.onDestroy() }
 }

@@ -104,6 +104,20 @@ def validate_capture_receipt(receipt, frames_path):
     # from the JSONL trace. Its processed count must not be equated to trace size.
     if "processed_frames" in sampling and sampling["processed_frames"] < count:
         raise ValueError("sampling.processed_frames cannot be smaller than the capture trace")
+    observed = sampling["observed_frames"]
+    for field in ("processed_frames", "skipped_rate_limit", "extraction_errors", "missing_pose_frames_retained"):
+        if field in sampling and sampling[field] > observed:
+            raise ValueError("sampling." + field + " cannot exceed observed_frames")
+    processed = sampling.get("processed_frames", count)
+    errors = sampling.get("extraction_errors", 0)
+    if processed + sampling["skipped_rate_limit"] + errors > observed:
+        raise ValueError("processed, rate-skipped and error counts cannot exceed observed_frames")
+    # Android counts missing pose before transport delivery; a later callback
+    # failure can make such a frame an extraction error rather than processed.
+    missing_bound = (processed + errors if "processed_frames" in sampling else
+                     observed - sampling["skipped_rate_limit"])
+    if sampling.get("missing_pose_frames_retained", 0) > missing_bound:
+        raise ValueError("missing_pose_frames_retained cannot exceed processed_frames plus extraction_errors")
     # Reject non-finite values and unpaired Unicode surrogates in nested fields.
     json.dumps(receipt, ensure_ascii=False, allow_nan=False).encode("utf-8")
     return receipt

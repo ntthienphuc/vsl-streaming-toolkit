@@ -21,6 +21,17 @@ def config(**kwargs):
 
 
 class StreamTests(unittest.TestCase):
+    def test_generic_points_rejected_atomically_in_signing_space(self):
+        session = StreamSession(config())
+        session.push_batch([frame(0)])
+        before = session.status()
+        with self.assertRaises(ProtocolError) as raised:
+            session.push_batch([frame(1), {"seq": 2, "timestamp_ms": 200, "points": [[1, 2]]}])
+        self.assertEqual(raised.exception.code, "incompatible_schema")
+        self.assertEqual(session.status(), before)
+        session.push_batch([frame(1), frame(2)])
+        self.assertEqual([f["seq"] for f in session.flush()[0].frames], [0, 1, 2])
+
     def test_fragmentation_and_all_segments(self):
         frames = [frame(i, i % 6 < 4) for i in range(12)]
         expected_session = StreamSession(config())

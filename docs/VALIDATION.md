@@ -25,9 +25,11 @@ this public synthetic release. No accuracy number is claimed here.
 
 Independent annotated continuous traces, boundary/event metrics, segmenter
 baselines, controlled latency/resource measurements, sustained overload and
-slow-client tests, independent reuse, a live camera client and Jetson execution
-require separate evidence. The included browser is a frame-file replay client;
-the existing Android application is not part of this package. One process owns
+slow-client tests, independent reuse, physical-camera validation and Jetson execution
+require separate evidence. The included browser is a frame-file replay client.
+The release includes an Android reference client and optional desktop extraction;
+builds and contract checks do not establish their physical capture quality.
+The original Flutter application remains separate. One process owns
 connection-local state; reconnect resumes neither state nor durable retries.
 
 ## Repository structure precedents

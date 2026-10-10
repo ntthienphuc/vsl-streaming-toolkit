@@ -1,0 +1,18 @@
+{
+  "synthetic-demo": [
+    {
+      "start_ms": 10,
+      "end_ms": 510,
+      "label": "SYNTHETIC_POSITIVE",
+      "status": "predicted",
+      "reason": "inactive"
+    },
+    {
+      "start_ms": 1400,
+      "end_ms": 1900,
+      "label": "SYNTHETIC_NEGATIVE",
+      "status": "predicted",
+      "reason": "flush"
+    }
+  ]
+}

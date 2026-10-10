@@ -96,6 +96,12 @@ jobs:
         run: |
           docker build -t vsl-streaming-ci .
           python tools/check_container.py --image vsl-streaming-ci --demo demo_run
+      - name: Check browser replay and evidence bounds
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          python -m pip install playwright==1.62.0
+          python -m playwright install --with-deps chromium
+          python tools/verify_browser.py --server-python python --bundle demo_run/bundle --config demo_run/server.json --frames demo_run/frames.json --out demo_run/browser
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -107,4 +113,6 @@ jobs:
             demo_run/server_only_receipt.json
             demo_run/container_receipt.json
             demo_run/resolved-requirements.txt
+            demo_run/browser/receipt.json
+            demo_run/browser/replay.png
           if-no-files-found: warn

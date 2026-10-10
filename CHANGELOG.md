@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.1 — 2026-10-10
+
+- Add opt-in per-session server JSONL evidence with model/configuration hashes,
+  response and send records, termination state, and explicit logging failures.
+- Reject prepared-point batches in signing-space mode instead of silently
+  treating a representation mismatch as inactive pose; tighten bundle schemas.
+- Reject multi-session or known unflushed logs during event conversion and
+  impossible capture counters; validate video orientation options before I/O.
+- Emit CLI JSON/errors as UTF-8 when redirected on Windows, preserving
+  Vietnamese labels and paths under legacy console encodings.
+- Make Android export snapshots session-specific, preserve source failures,
+  distinguish unsent/uncertain frames, validate result acknowledgments and
+  bound captured traces to the replay limit. Preserve client/device metadata.
+- Bound browser replay inputs/history and request sizes, and close finished
+  replay connections. Keep errors and omitted-history counts visible.
+- Ship a complete synthetic evaluator example; refresh related-software
+  comparisons, mixed-license contribution guidance and SoftwareX preparation.
+
+This patch records software preparation and regression checks only. Physical
+Android tests, natural-sign quality and current-release performance Results
+remain pending. Earlier v0.1.2/v0.2.0 receipts retain their original scope.
+
 ## 0.2.0 — 2026-10-10
 
 - Add native SPOTER-54 legacy and SL-GCN-27 bone preprocessing profiles with

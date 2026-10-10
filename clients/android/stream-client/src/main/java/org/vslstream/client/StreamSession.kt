@@ -38,6 +38,7 @@ class StreamSession(
     private var rejected = 0L
     private var uncertain = 0L
     private var inFlight = 0
+    private var inFlightSent = false
     private var requestNo = 0L
     private var flushAcknowledged = false
     private var failure: String? = null
@@ -105,8 +106,10 @@ class StreamSession(
 
     private fun validateOrder(frame: JsonObject) {
         val seqNumber = frame.get("seq")?.asBigDecimal ?: error("Missing seq")
+        require(frame.get("seq").isJsonPrimitive && frame.getAsJsonPrimitive("seq").isNumber) { "seq must be a JSON number" }
         val seq = seqNumber.longValueExact()
         val time = frame.get("timestamp_ms")?.asDouble ?: error("Missing timestamp_ms")
+        require(frame.get("timestamp_ms").isJsonPrimitive && frame.getAsJsonPrimitive("timestamp_ms").isNumber) { "timestamp_ms must be a JSON number" }
         require(seq >= 0 && seq > lastSeq && time.isFinite() && time >= 0 && time > lastTimestamp) {
             "Frames require strictly increasing nonnegative integer seq and finite timestamp_ms"
         }
@@ -136,7 +139,11 @@ class StreamSession(
         synchronized(lock) { pendingId = id; reply = future }
         val text = message.toString()
         require(text.toByteArray(Charsets.UTF_8).size <= maxBytes) { "Message exceeds server byte limit" }
-        check(socket!!.send(text)) { "WebSocket send failed" }
+        synchronized(lock) {
+            check(failure == null) { failure!! }
+            check(socket!!.send(text)) { "WebSocket send failed" }
+            inFlightSent = inFlight > 0
+        }
         val result = future.get(timeoutSeconds, TimeUnit.SECONDS)
         synchronized(lock) { reply = null; pendingId = null }
         if (result.get("type")?.asString == "error") {
@@ -144,6 +151,9 @@ class StreamSession(
             error("Server rejected request: $result")
         }
         check(result.get("type")?.asString == "result") { "Unexpected server response: $result" }
+        check(result.get("events")?.isJsonArray == true && result.get("state")?.isJsonObject == true) {
+            "Malformed result response"
+        }
         return result
     }
 
@@ -171,7 +181,7 @@ class StreamSession(
                     }
                 } ?: break
                 val result = request(JsonObject().apply { addProperty("type", "frames"); add("frames", batch) })
-                synchronized(lock) { acked += inFlight; inFlight = 0 }
+                synchronized(lock) { acked += inFlight; inFlight = 0; inFlightSent = false }
                 onResult(result)
             }
             val flushed = request(JsonObject().apply { addProperty("type", "flush") })
@@ -180,7 +190,8 @@ class StreamSession(
         } catch (error: Exception) {
             synchronized(lock) {
                 failure = failure ?: (error.cause?.message ?: error.message ?: error.javaClass.simpleName)
-                uncertain += inFlight; inFlight = 0
+                if (inFlightSent) uncertain += inFlight else aborted += inFlight
+                inFlight = 0; inFlightSent = false
                 aborted += queue.size; queue.clear()
             }
         } finally {

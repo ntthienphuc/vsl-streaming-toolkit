@@ -1,6 +1,6 @@
 # Evaluation scope and application clients
 
-Documentation audit: 10 October 2026. The current release is 0.2.0. Archived
+Documentation audit: 10 October 2026. The current release is 0.2.1. Archived
 October 9 load and integration results remain attached to runtime **0.1.2** at
 `f2410017a5273ecf3158f7971f31c4b484d2e9dd` and the separate
 `study-20261009` capsule. Existing tags and assets are not replaced.
@@ -113,7 +113,7 @@ to the release validation receipt and CI run for the final commit.
    counts and rejected events. The evaluator supplies calculations, not labels.
 3. Measure the Android path on a physical device, including orientation,
    missing-hand/pose behavior, timestamps, reconnects and overload counters.
-4. If reporting 0.2.0 latency or capacity, rerun its locked release and disclose
+4. If reporting current-release latency or capacity, run its locked release and disclose
    hardware, provider, warmup, trace pacing, concurrency and error counts.
 
 A functional toolkit and a measured recognition system support different

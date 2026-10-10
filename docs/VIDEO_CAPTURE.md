@@ -67,6 +67,16 @@ Desktop and Android capture profiles deliberately have different identifiers.
 The native tensor profiles lock landmark ordering and numerical transforms;
 capture compatibility still requires a separately recorded comparison.
 
+Receipt validation also checks the frame sequence and timestamps, exact emitted
+and missing-pose trace counts when supplied, and feasible processing totals.
+Android processing precedes transport admission: `processed_frames` can exceed
+`trace_frames`. Its missing-pose counter is incremented before delivery, so a
+later callback failure may contribute to both `missing_pose_frames_retained`
+and `extraction_errors`. Camera frames replaced upstream by backpressure are
+not observed; `skipped_busy: null` is unknown, not zero. Do not infer source
+camera FPS or the total number of dropped camera frames from admitted trace
+counts.
+
 For a recognition study, retain authorized original videos and the sidecars,
 annotate word intervals on the source clock, freeze source-group split roles,
 and use [event evaluation](EVENT_EVALUATION.md). Synthetic blank-video checks

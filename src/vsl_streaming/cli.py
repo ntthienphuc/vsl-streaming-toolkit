@@ -104,6 +104,11 @@ def create_demo(output_dir):
 
 
 def main(argv=None):
+    # JSON output is UTF-8 even when Windows redirects to a legacy code page.
+    # Test/caller supplied StringIO streams do not expose reconfigure().
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(prog="vsl-stream", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     for name in ("init", "demo"):
@@ -133,6 +138,7 @@ def main(argv=None):
     p.add_argument("--config")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--session-log-dir", help="Opt-in local per-session JSONL evidence; keep outside public artifacts")
     p = sub.add_parser("replay", help="Replay JSON array or JSONL frames through the same segmentation/runtime")
     p.add_argument("--bundle", required=True)
     p.add_argument("--frames", required=True)
@@ -225,7 +231,7 @@ def main(argv=None):
             import uvicorn
             from .server import create_app
             settings = load_config(args.config)
-            uvicorn.run(create_app(args.bundle, settings), host=args.host, port=args.port,
+            uvicorn.run(create_app(args.bundle, settings, session_log_dir=args.session_log_dir), host=args.host, port=args.port,
                         ws_max_size=settings.max_message_bytes, ws_max_queue=4, workers=1)
             return 0
         print(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))

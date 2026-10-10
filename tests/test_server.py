@@ -1,6 +1,9 @@
 """Real ASGI WebSocket contracts using a deterministic injected recognizer."""
 import json
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
@@ -8,6 +11,7 @@ from starlette.websockets import WebSocketDisconnect
 from vsl_streaming.config import ServerConfig
 from vsl_streaming.core import StreamConfig
 from vsl_streaming.server import create_app
+from vsl_streaming.session_logging import SessionLog, SessionLogError, canonical_sha256
 
 
 class FakeRecognizer:
@@ -37,6 +41,88 @@ def message(start=0, count=3, request_id="r1", flush=False):
 
 
 class WebSocketServerTests(unittest.TestCase):
+    def test_session_log_records_full_responses_retry_and_unflushed_disconnect(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = FakeRecognizer()
+            app = create_app(config=config(), recognizer=model, session_log_dir=directory)
+            with TestClient(app) as client:
+                self.assertNotIn(directory, client.get("/v1/config").text)
+                with client.websocket_connect("/v1/stream") as ws:
+                    ready = ws.receive_json()
+                    ws.send_json(message(count=5))
+                    result = ws.receive_json()
+                    ws.send_json(message(count=5))
+                    retry = ws.receive_json()
+                    ws.send_text("{")
+                    invalid = ws.receive_json()
+                self.assertEqual(client.get("/health").json()["active_sessions"], 0)
+            records = [json.loads(line) for line in (Path(directory) / (ready["session_id"] + ".session.jsonl")).read_text(encoding="utf-8").splitlines()]
+            self.assertEqual([r["record_index"] for r in records], list(range(len(records))))
+            start, end = records[0], records[-1]
+            self.assertEqual(start["type"], "session_start")
+            self.assertEqual(start["settings_sha256"], canonical_sha256(config().to_dict()))
+            self.assertIsNone(start["bundle_sha256"])
+            responses = [r for r in records if r["type"] == "response"]
+            self.assertEqual([r["response"] for r in responses], [ready, result, retry, invalid])
+            self.assertEqual(responses[1]["request_sha256"], responses[2]["request_sha256"])
+            self.assertEqual([r["response_index"] for r in records if r["type"] == "send_complete"], [0, 1, 2, 3])
+            self.assertEqual(end["type"], "session_end")
+            self.assertEqual(end["reason"], "client_disconnect")
+            self.assertEqual(end["buffered_frames_abandoned"], 2)
+            self.assertEqual(end["state"]["received_frames"], 5)
+            self.assertEqual(model.calls, [[0, 1, 2]])
+            self.assertNotIn('"points"', (Path(directory) / (ready["session_id"] + ".session.jsonl")).read_text())
+
+    def test_logging_disabled_does_not_open_evidence(self):
+        with patch("vsl_streaming.server.SessionLog", side_effect=AssertionError("unexpected logging")):
+            with TestClient(create_app(config=config(), recognizer=FakeRecognizer())) as client:
+                with client.websocket_connect("/v1/stream") as ws:
+                    self.assertEqual(ws.receive_json()["type"], "ready")
+
+    def test_unusable_log_directory_fails_before_serving(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "file"
+            path.write_text("occupied")
+            with self.assertRaises(OSError):
+                create_app(config=config(), recognizer=FakeRecognizer(), session_log_dir=path)
+
+    def test_log_open_failure_closes_without_ready_or_inference(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model = FakeRecognizer()
+            app = create_app(config=config(), recognizer=model, session_log_dir=directory)
+            with patch("vsl_streaming.server.SessionLog", side_effect=SessionLogError("unavailable")):
+                with TestClient(app) as client:
+                    with client.websocket_connect("/v1/stream") as ws:
+                        with self.assertRaises(WebSocketDisconnect) as caught:
+                            ws.receive_json()
+                    self.assertEqual(caught.exception.code, 1011)
+                    self.assertEqual(client.get("/health").json()["active_sessions"], 0)
+            self.assertEqual(model.calls, [])
+
+    def test_response_log_failure_stops_acknowledgement_and_releases_session(self):
+        original = SessionLog.write
+        def fail_response(log, kind, **fields):
+            if kind == "response" and fields["response"]["type"] == "result":
+                raise SessionLogError("disk full")
+            return original(log, kind, **fields)
+        with tempfile.TemporaryDirectory() as directory:
+            model = FakeRecognizer()
+            app = create_app(config=config(), recognizer=model, session_log_dir=directory)
+            with patch.object(SessionLog, "write", fail_response):
+                with TestClient(app) as client:
+                    with client.websocket_connect("/v1/stream") as ws:
+                        ready = ws.receive_json()
+                        ws.send_json(message())
+                        with self.assertRaises(WebSocketDisconnect) as caught:
+                            ws.receive_json()
+                    self.assertEqual(caught.exception.code, 1011)
+                    self.assertEqual(client.get("/health").json()["active_sessions"], 0)
+            records = [json.loads(line) for line in (Path(directory) / (ready["session_id"] + ".session.jsonl")).read_text().splitlines()]
+            self.assertEqual(records[-1]["reason"], "evidence_log_failed")
+            self.assertEqual(records[-1]["state"]["received_frames"], 3)
+            self.assertEqual(len(model.calls), 1)
+            self.assertEqual(len([r for r in records if r["type"] == "response"]), 1)
+
     def test_adapter_exception_is_bounded_utf8_and_connection_recovers(self):
         model = FakeRecognizer()
         def broken(frames):
