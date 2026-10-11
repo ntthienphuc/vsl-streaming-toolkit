@@ -16,7 +16,7 @@ see [RELATED_WORK.md](RELATED_WORK.md). No new recognition algorithm is claimed.
 | Are model interpretation and inputs identifiable? | Bundle checksums and replay receipt hashes | Artifact integrity and association with an exact frame file |
 | Is the boundary detector linguistically accurate? | Not established by the synthetic suite | Needs independently annotated sign boundaries if claimed |
 | Is recognition accurate on natural signing? | Not established by fixture labels or runtime agreement | Needs labeled evaluation if claimed |
-| Is deployment validated on Jetson or a live camera? | Not established by host replay | Needs target/client evidence if claimed |
+| Is deployment validated on Jetson or useful live-camera landmarks? | Not established by public host replay; limited local phone smoke is described below | Needs target-specific evidence; camera frames with null landmarks do not establish recognition |
 
 Replay receipts include the input file's SHA-256, model/profile/ordered-label
 hashes, configuration, Python/platform and runtime versions. Hashes establish
@@ -58,23 +58,27 @@ existing functionality. Their inclusion should follow the paper's actual claims
 and available evidence. This checklist is project-specific preparation, not an
 assertion that a journal has accepted the software or waived its requirements.
 
-## Version 0.2.0 release gate
+## Archived version 0.2.0 compatibility gate
 
-The current implementation includes native tensor preparation for two audited
+The v0.2.0 implementation introduced native tensor preparation for two audited
 contracts, a video-to-trace adapter, a standalone Android reference client and
 an annotation-based event evaluator. These additions make the measurement path
 explicit. They do not remove the need for legally accessible application inputs
 and independent annotations.
 
+The following table records historical v0.2.0 preparation and checks. It is not
+a new v0.2.1 experiment or the current manuscript's Results. Keep the original
+receipts and evaluated model/source identities with those counts.
+
 | Gate | Status / required evidence |
 | --- | --- |
 | Software packaging | Final wheel, source archive, CI results and checksums tied to the release commit |
-| Native contracts | 60 trace/model segment comparisons and 22 generated length/profile cases; host compatibility only |
+| Native contracts | Archived v0.2.0: 60 trace/model segment comparisons and 22 generated length/profile cases; host compatibility only, not new v0.2.1 results |
 | Capture provenance | Explicit detector assets, clock/orientation policies and exact frame hashes; model compatibility requires separate checking |
-| Android integration | Build and transport checks; physical-device capture and network measurements remain pending |
+| Android integration | At the v0.2.0 gate: build and transport checks; physical-device capture and network measurements were pending |
 | Event quality | Implemented evaluator and synthetic calculation tests; natural-stream annotations and results remain pending |
 | Real-case reproducibility | Publicly shareable weights/data or a documented lawful acquisition route still required |
-| Performance claims | Archived v0.1.2 timings retain that version; benchmark 0.2.0 separately before reporting its timing |
+| Performance claims | Archived v0.1.2 timings retain that version; any later timing requires a separately identified measurement |
 
 The article should lead with the software problem: adapting a compatible
 isolated-sign recognizer into a bounded stream of auditable segment events.
@@ -92,11 +96,11 @@ failure handling; external adoption or productivity improvements require
 independent evidence and should not be inferred from feature count.
 
 
-## Pre-results preparation, 10 October 2026
+## Pre-results preparation, updated 11 October 2026
 
 Version 0.2.1 hardens the 0.2.0 feature set. The
 [submission matrix](SOFTWAREX_SUBMISSION.md) separates completed preparation
-from author-supplied information, publication verification and future results.
+from author-supplied information, final template application and future results.
 Journal fit is a reason to prepare a careful submission, not an acceptance
 prediction.
 
@@ -116,7 +120,53 @@ predeclared rule. These are project-specific safeguards for interpretable
 results; they do not assert an unverified journal-mandated experiment count.
 
 The current unresolved evidence gates remain permissioned real-case access,
-independent natural-stream annotations, physical-device measurements for any
-phone claim, and results bound to the final measured version. They are deliberately
-left for the next experimental phase. A software release may be usable before
-the associated article is ready for submission.
+independent natural-stream annotations, useful physical-device landmark capture,
+measurements supporting the exact phone/network/timing claim, and Results bound
+to the measured version. They remain for the next experimental phase. A software
+release may be usable before the associated article is ready for submission.
+
+## Local phone smoke is not scientific Results
+
+The local 11 October report and structured receipt establish a limited
+engineering smoke: 205 acknowledged frames across four completed sessions
+(24 + 24 synthetic replay; 106 + 51 camera frames). All 157 camera trace frames
+had null pose and hand landmarks. Missing-detection frame capture, transport,
+stop/flush, export and cleanup were exercised; recognition on camera input,
+landmark quality, natural-sign boundaries and accuracy were not established.
+This evidence remains local and is not presented as public journal Results.
+It also does not validate Wi-Fi/LAN, WSS/TLS, long captures or deployment latency.
+The receipt identifies a later checkout and the selected APK separately from
+the frozen v0.2.1 tag; preserve those identities rather than treating main as the
+release. Private traces and raw device identifiers are not included here.
+
+## Verified journal format and author gates
+
+The complete supplied SoftwareX Guide for Authors PDF was reviewed on
+11 October; [SOFTWAREX_SUBMISSION.md](SOFTWAREX_SUBMISSION.md) records its hash
+and page convention. The descriptive paper has a **4,000-word maximum** including
+abstract, running text, captions and footnotes, excluding title, authors,
+affiliations, references and metadata tables, with at most six figures (p. 30).
+Use the exact journal template (pp. 4, 23–24, 30–31), an editable single-column
+Word source (p. 15), figures embedded in .docx and supplied separately as artwork
+and source files (pp. 4, 18, 23–24). A prepared draft does not establish that the
+format has been preserved. The official Word template was separately retrieved
+and inspected on 11 October 2026: Version 6 (March 2026). It requires the five
+main sections and fixed C1–C8 metadata labels, targets an approximately 100-word
+abstract and allows at most six keywords. Apply those template constraints
+alongside the guide's broader abstract/keyword ceilings.
+
+The guide permits at most 250 abstract words and 1–7 English keywords
+(pp. 16–17); use the narrower Word-template targets above for this submission.
+Highlights and a graphical abstract are encouraged, not mandatory (p. 17).
+Supply the required data-availability statement and either deposit/cite/link
+supporting research data or explain why sharing is impossible (p. 22). An
+unconditional promise to publish restricted participant traces would not satisfy
+the project's permissions constraints.
+
+Authors still need to confirm author order/approval, full affiliation and
+correspondence, CRediT roles, funding/sponsor role, the competing-interest
+declaration-tool output, and any applicable ethics/consent or justified exemption
+(pp. 5–8, 13–16, 25). Declare actual manuscript-preparation AI assistance before
+references when applicable (pp. 9–10), and AI-generated images in their captions
+as well as the general disclosure (p. 20). Keep statements awaiting author
+confirmation visibly unresolved; do not infer approval from software tests.
