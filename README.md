@@ -39,6 +39,7 @@ the model, its preprocessing contract and labels in training class order.
 | Try the complete public workflow | [Run the synthetic demo](#quick-start) |
 | Connect a trained classifier | [Create and inspect a model bundle](#use-your-own-model) |
 | Capture or replay a stream | [Desktop and Android adapters](#capture-replay-and-evaluate) |
+| Try the Flutter research interface | [Flutter client](clients/flutter_demo/README.md), [PC video upload](docs/VIDEO_DEMO.md), and [capture compatibility](docs/FLUTTER_CAPTURE_COMPATIBILITY.md) |
 | Reproduce the software checks | [REPRODUCE.md](REPRODUCE.md) |
 
 > **Research scope:** outputs are segment-level gloss predictions. The public demo

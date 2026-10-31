@@ -1,0 +1,17 @@
+name: flutter_demo
+description: VSL Streaming Toolkit research client.
+publish_to: none
+version: 0.2.1+6
+environment:
+  sdk: ^3.12.0
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.6.0
+  image_picker: ^1.2.1
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true

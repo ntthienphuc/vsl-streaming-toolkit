@@ -1,0 +1,46 @@
+name: Flutter research client
+on:
+  push:
+    paths:
+      - 'clients/flutter_demo/**'
+      - 'clients/android/stream-client/**'
+      - '.github/workflows/flutter.yml'
+  pull_request:
+    paths:
+      - 'clients/flutter_demo/**'
+      - 'clients/android/stream-client/**'
+      - '.github/workflows/flutter.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.0'
+          channel: stable
+          cache: true
+      - name: Resolve, analyze and test
+        working-directory: clients/flutter_demo
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+      - name: Compile native bridge without detector assets
+        working-directory: clients/flutter_demo
+        run: flutter build apk --debug --target-platform android-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flutter-compile-arm64-debug-no-detector-assets
+          path: clients/flutter_demo/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
