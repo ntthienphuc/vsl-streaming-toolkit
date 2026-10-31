@@ -26,7 +26,8 @@ class VideoDemoTests(unittest.TestCase):
         from fastapi.testclient import TestClient
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # Windows runners may expose TEMP through an 8.3 alias; the app resolves it.
+        self.root = Path(self.temp.name).resolve()
         self.bundle = self.root / "bundle"
         self.bundle.mkdir()
         self.pose, self.hands = self.root / "pose.task", self.root / "hands.task"
